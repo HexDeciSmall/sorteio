@@ -518,6 +518,35 @@
     return pool.filter(function (item) { return !excluded.has(item.id); });
   }
 
+  function shuffleList(state, key) {
+    if (!['friends', 'cards', 'anime'].includes(key)) fail('Só é possível embaralhar os nomes, as cartas ou os animes.');
+    var pool = available(state, key);
+    if (pool.length < 2) return false;
+    var original = pool.slice();
+    for (var i = pool.length - 1; i > 0; i--) {
+      var target = secureIndex(i + 1);
+      var item = pool[i]; pool[i] = pool[target]; pool[target] = item;
+    }
+    if (pool.every(function (item, index) { return item === original[index]; })) {
+      var first = pool[0]; pool[0] = pool[1]; pool[1] = first;
+    }
+    var ids = new Set(pool.map(function (item) { return item.id; }));
+    var cursor = 0;
+    state[key].forEach(function (item, index) {
+      if (ids.has(item.id)) state[key][index] = pool[cursor++];
+    });
+    return true;
+  }
+
+  function clearAnime(state) {
+    var count = state.anime.length;
+    state.anime.length = 0;
+    state.used.anime.length = 0;
+    state.current.anime = null;
+    prepareTurnEffect(state);
+    return count;
+  }
+
   function secureIndex(length) {
     if (!Number.isInteger(length) || length < 1 || length > 4294967296) fail('A quantidade de opções deve ser um inteiro positivo.');
     if (root.crypto && typeof root.crypto.getRandomValues === 'function') {
@@ -638,5 +667,5 @@
     return currentDegrees + turns * 360 + modulo(target - modulo(currentDegrees));
   }
 
-  return { uid: uid, createState: createState, migrateDefaults: migrateDefaults, addStandardCards: addStandardCards, normalizeState: normalizeState, normalizeAniListProfile: normalizeAniListProfile, normalizeAnimeMetadata: normalizeAnimeMetadata, effectInfo: effectInfo, prepareTurnEffect: prepareTurnEffect, applyTurnEffect: applyTurnEffect, INFERNAL_ANIME: INFERNAL_ANIME, available: available, secureIndex: secureIndex, pick: pick, rejectAnime: rejectAnime, commitRound: commitRound, removeRound: removeRound, cycleRecords: cycleRecords, clearCurrent: clearCurrent, resetCycle: resetCycle, escapeHtml: escapeHtml, wheelTarget: wheelTarget };
+  return { uid: uid, createState: createState, migrateDefaults: migrateDefaults, addStandardCards: addStandardCards, normalizeState: normalizeState, normalizeAniListProfile: normalizeAniListProfile, normalizeAnimeMetadata: normalizeAnimeMetadata, effectInfo: effectInfo, prepareTurnEffect: prepareTurnEffect, applyTurnEffect: applyTurnEffect, INFERNAL_ANIME: INFERNAL_ANIME, available: available, shuffleList: shuffleList, clearAnime: clearAnime, secureIndex: secureIndex, pick: pick, rejectAnime: rejectAnime, commitRound: commitRound, removeRound: removeRound, cycleRecords: cycleRecords, clearCurrent: clearCurrent, resetCycle: resetCycle, escapeHtml: escapeHtml, wheelTarget: wheelTarget };
 });

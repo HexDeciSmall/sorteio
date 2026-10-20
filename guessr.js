@@ -17,7 +17,7 @@
   let message = '';
   let messageIsError = false;
   let storageMessage = '';
-  const signature = (friends) => JSON.stringify(friends.map((friend) => [friend.id, friend.name, friend.anilistUsername || '']));
+  const signature = (friends) => JSON.stringify(friends.map((friend) => [friend.id, friend.name, friend.anilistUsername || '']).sort((a, b) => a[0].localeCompare(b[0])));
   let friendsKey = signature(A.getFriends());
   try {
     const stored = localStorage.getItem(key);

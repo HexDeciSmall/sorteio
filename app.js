@@ -316,6 +316,7 @@
     main.disabled = busy || ready || effect.pending || ['friends', 'cards', 'anime'].some((key) => !state.current[keyMap[key]] && !C.available(state, key).length);
     main.innerHTML = icon(busy ? 'refresh' : 'dice') + (busy ? ' Girando…' : filled && !ready ? ' Completar' : ' Girar tudo');
     $$('[data-spin]').forEach((button) => button.disabled = busy || (ready && button.dataset.spin !== 'anime') || (effect.pending && button.dataset.spin === 'anime') || !C.available(state, button.dataset.spin).length);
+    $$('[data-shuffle]').forEach((button) => button.disabled = busy || C.available(state, button.dataset.shuffle).length < 2);
     $$('[data-edit], [data-view], #manage-all, [data-delete-result]').forEach((button) => button.disabled = busy);
     $$('[data-section]').forEach((button) => button.disabled = busy);
     $('#reset-cycle').disabled = busy || !(state.used.friends.length || state.used.anime.length || C.cycleRecords(state).length || filled);
@@ -470,6 +471,9 @@
     $('#description-field').hidden = !isCards;
     $('#effect-field').hidden = !isCards;
     $('#add-standard-cards').hidden = !isCards;
+    $('#clear-all-anime').hidden = isFriends || isCards;
+    $('#clear-all-anime').disabled = busy || !state.anime.length;
+    $('#editor-list-hint').hidden = !isFriends && !isCards;
     $('#anime-search-tools').hidden = isFriends || isCards;
     $('#catalog-source').hidden = isFriends || isCards;
     renderCatalogSelection();
@@ -596,6 +600,13 @@
   $('#apply-card-effect').addEventListener('click', () => { const targetId = $('#card-effect-target').value; if (targetId) useCardEffect(targetId); });
   $('#skip-card-effect').addEventListener('click', () => useCardEffect(null));
   $$('[data-spin]').forEach((button) => button.addEventListener('click', () => runSpins([button.dataset.spin])));
+  $$('[data-shuffle]').forEach((button) => button.addEventListener('click', () => {
+    if (busy) return;
+    const key = button.dataset.shuffle;
+    if (!C.shuffleList(state, key)) return;
+    persist(); renderAll();
+    toast({ friends: 'Nomes embaralhados.', cards: 'Cartas embaralhadas.', anime: 'Animes embaralhados.' }[key]);
+  }));
   $('#confirm-anime').addEventListener('click', () => {
     if (busy || !Object.values(state.current).every(Boolean)) return;
     try {
@@ -686,6 +697,15 @@
     openEditor('anime'); editEntry(id); searchAnimeCatalog();
   });
   $('#cancel-edit').addEventListener('click', () => { resetEntryForm(); renderEditor(); });
+  $('#clear-all-anime').addEventListener('click', () => {
+    if (busy || editorTab !== 'anime' || !state.anime.length) return;
+    confirmAction('Limpar todos os animes?', 'Os ' + state.anime.length + ' animes cadastrados serão removidos. Resultados e histórico serão mantidos.', () => {
+      C.clearAnime(state);
+      resetEntryForm(); persist(); renderAll(); renderEditor();
+      $('#entry-name').focus();
+      toast('Todos os animes foram removidos.');
+    }, 'Limpar animes');
+  });
   $('#add-standard-cards').addEventListener('click', () => {
     if (busy) return;
     try {

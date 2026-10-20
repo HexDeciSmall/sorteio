@@ -19,6 +19,10 @@ Extraia todos os arquivos para a mesma pasta e abra `index.html` em um navegador
 
 Antes de completar as três escolhas, você pode refazer um giro individual. Com as três prontas, os giros de nomes e cartas ficam bloqueados enquanto você decide se confirma o anime ou pede outro. As escolhas pendentes continuam no mesmo estado ao fechar e reabrir o site; reabrir não confirma a rodada.
 
+Use o ícone de setas cruzadas (**Embaralhar / Shuffle**), ao lado de Editar nas três roletas — Nomes, Cartas e Animes —, para mudar a ordem das opções disponíveis. O botão fica disponível quando há pelo menos duas opções e nenhuma roleta está girando. Embaralhar não sorteia outra opção nem altera as escolhas pendentes, os perfis, as indicações, os efeitos da vez ou os resultados. As quatro cópias de Sem Efeito continuam separadas e com a mesma chance. A nova ordem fica salva neste navegador e no backup das roletas.
+
+Para esvaziar a lista de animes de uma vez, abra **Editar animes → Limpar todos** e confirme em **Limpar animes**. Todos os animes cadastrados serão removidos, inclusive os que já saíram, e a escolha de anime ainda não confirmada será descartada. Os nomes, cartas, resultados e histórico continuam guardados; os animes apagados não voltam ao limpar resultados. Exporte os dados antes se quiser restaurar a lista depois.
+
 Recusar um anime não o consome. Se houver outra opção disponível, o título recusado fica fora do giro imediatamente seguinte, mas pode aparecer em rodadas futuras. Se só houver um anime disponível, adicione outro ou use **Girar** para sortear novamente o único título.
 
 Os Resultados mostram as atribuições do ciclo atual na ordem em que aconteceram, no formato **Nome — Anime (efeito da carta)**. Quando a carta não tiver descrição, aparece o nome dela entre parênteses. Use **Copiar**, na seção Resultados, para levar essa lista ao grupo.

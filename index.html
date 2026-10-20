@@ -7,12 +7,12 @@
   <meta name="description" content="Roletas de nomes, cartas e animes para sortear entre amigos.">
   <title>Sorteio</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=guessr-turbo-20261020">
-  <script src="core.js?v=guessr-turbo-20261020" defer></script>
-  <script src="catalog.js?v=guessr-turbo-20261020" defer></script>
-  <script src="guessr-core.js?v=guessr-turbo-20261020" defer></script>
-  <script src="app.js?v=guessr-turbo-20261020" defer></script>
-  <script src="guessr.js?v=guessr-turbo-20261020" defer></script>
+  <link rel="stylesheet" href="styles.css?v=shuffle-cartas-20261020">
+  <script src="core.js?v=shuffle-cartas-20261020" defer></script>
+  <script src="catalog.js?v=shuffle-cartas-20261020" defer></script>
+  <script src="guessr-core.js?v=shuffle-cartas-20261020" defer></script>
+  <script src="app.js?v=shuffle-cartas-20261020" defer></script>
+  <script src="guessr.js?v=shuffle-cartas-20261020" defer></script>
 </head>
 <body>
   <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -21,6 +21,7 @@
     <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h6m4 0h6M4 17h10m4 0h2"/><circle cx="12" cy="7" r="2"/><circle cx="16" cy="17" r="2"/></symbol>
     <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 8a8 8 0 1 0 .5 7M20 3v5h-5"/></symbol>
+    <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M3 5h3l12 14h3m-4-4 4 4-4 4M3 19h3l4-5m4-4 4-5h3m-4-4 4 4-4 4"/></symbol>
     <symbol id="i-volume" viewBox="0 0 24 24"><path d="m11 5-6 4H2v6h3l6 4zM15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol>
     <symbol id="i-mute" viewBox="0 0 24 24"><path d="m11 5-6 4H2v6h3l6 4zM16 9l6 6m0-6-6 6"/></symbol>
     <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
@@ -49,20 +50,20 @@
     <main id="draw-view" aria-label="Roletas">
       <div class="wheels-grid">
         <article class="wheel-card friend-card" data-wheel="friends">
-          <div class="wheel-title-row"><h2>Nomes <span class="pool-count" id="count-friends"></span></h2><button class="edit-wheel text-button" data-edit="friends" aria-label="Editar participantes"><svg><use href="#i-edit"/></svg>Editar</button></div>
+          <div class="wheel-title-row"><h2>Nomes <span class="pool-count" id="count-friends"></span></h2><div class="wheel-tools"><button class="icon-button shuffle-wheel" data-shuffle="friends" aria-label="Embaralhar nomes" title="Embaralhar nomes (Shuffle)"><svg><use href="#i-shuffle"/></svg></button><button class="edit-wheel text-button" data-edit="friends" aria-label="Editar participantes"><svg><use href="#i-edit"/></svg>Editar</button></div></div>
           <div class="wheel-stage" id="stage-friends"><div class="wheel-orbit"></div><div class="wheel-pointer"></div><div class="wheel-rotor" id="rotor-friends"></div><div class="wheel-hub"><svg><use href="#i-user"/></svg></div></div>
           <div class="wheel-result" id="result-friends" aria-live="polite"><strong>—</strong></div>
           <button class="button button-spin" id="spin-friends" data-spin="friends" aria-label="Girar roleta de nomes"><svg><use href="#i-refresh"/></svg>Girar</button>
         </article>
         <article class="wheel-card card-card" data-wheel="cards">
-          <div class="wheel-title-row"><h2>Cartas <span class="pool-count" id="count-cards"></span></h2><button class="edit-wheel text-button" data-edit="cards" aria-label="Editar cartas"><svg><use href="#i-edit"/></svg>Editar</button></div>
+          <div class="wheel-title-row"><h2>Cartas <span class="pool-count" id="count-cards"></span></h2><div class="wheel-tools"><button class="icon-button shuffle-wheel" data-shuffle="cards" aria-label="Embaralhar cartas" title="Embaralhar cartas (Shuffle)"><svg><use href="#i-shuffle"/></svg></button><button class="edit-wheel text-button" data-edit="cards" aria-label="Editar cartas"><svg><use href="#i-edit"/></svg>Editar</button></div></div>
           <div class="wheel-stage" id="stage-cards"><div class="wheel-orbit"></div><div class="wheel-pointer"></div><div class="wheel-rotor" id="rotor-cards"></div><div class="wheel-hub"><svg><use href="#i-card"/></svg></div></div>
           <div class="wheel-result" id="result-cards" aria-live="polite"><strong>—</strong></div>
           <div id="card-effect" class="card-effect" hidden><p id="card-effect-message" role="status"></p><div id="card-effect-controls" hidden><label class="form-label"><span id="card-effect-target-label">Retirar nesta vez</span><select id="card-effect-target"></select></label><div class="card-effect-actions"><button id="apply-card-effect" class="button button-primary">Aplicar e girar</button><button id="skip-card-effect" class="text-button">Não usar</button></div></div></div>
           <button class="button button-spin" id="spin-cards" data-spin="cards" aria-label="Girar roleta de cartas"><svg><use href="#i-refresh"/></svg>Girar</button>
         </article>
         <article class="wheel-card anime-card" data-wheel="anime">
-          <div class="wheel-title-row"><h2>Animes <span class="pool-count" id="count-anime"></span></h2><button class="edit-wheel text-button" data-edit="anime" aria-label="Editar animes"><svg><use href="#i-edit"/></svg>Editar</button></div>
+          <div class="wheel-title-row"><h2>Animes <span class="pool-count" id="count-anime"></span></h2><div class="wheel-tools"><button class="icon-button shuffle-wheel" data-shuffle="anime" aria-label="Embaralhar animes" title="Embaralhar animes (Shuffle)"><svg><use href="#i-shuffle"/></svg></button><button class="edit-wheel text-button" data-edit="anime" aria-label="Editar animes"><svg><use href="#i-edit"/></svg>Editar</button></div></div>
           <div class="wheel-stage" id="stage-anime"><div class="wheel-orbit"></div><div class="wheel-pointer"></div><div class="wheel-rotor" id="rotor-anime"></div><div class="wheel-hub"><svg><use href="#i-play"/></svg></div></div>
           <div class="wheel-result" id="result-anime" aria-live="polite"><strong>—</strong></div>
           <div id="anime-details" class="anime-details" hidden>
@@ -116,7 +117,7 @@
         <p id="catalog-source" class="catalog-source" hidden>Dados do <a href="https://myanimelist.net/" target="_blank" rel="noopener noreferrer">MyAnimeList</a> via <a href="https://tenrai.org/" target="_blank" rel="noopener noreferrer">Tenrai</a>, compatível com Jikan. Você também pode cadastrar manualmente.</p>
         <div class="form-actions"><button class="button button-primary" type="submit" id="entry-submit"><svg><use href="#i-plus"/></svg> Adicionar</button><button class="text-button" id="cancel-edit" type="button" hidden>Cancelar edição</button></div>
       </form>
-      <div class="editor-list-header"><span id="list-label"></span><button id="add-standard-cards" class="text-button" hidden>Cartas padrão</button><span>EDITAR / REMOVER</span></div><div class="entry-list" id="entry-list"></div>
+      <div class="editor-list-header"><span id="list-label"></span><div class="editor-list-actions"><button id="add-standard-cards" class="text-button" hidden>Cartas padrão</button><button id="clear-all-anime" class="text-button danger-text" aria-label="Limpar todos os animes" hidden><svg><use href="#i-trash"/></svg>Limpar todos</button><span id="editor-list-hint">EDITAR / REMOVER</span></div></div><div class="entry-list" id="entry-list"></div>
     </div>
     <div class="backup-actions"><div><button class="text-button" id="export-data"><svg><use href="#i-download"/></svg> Exportar dados</button><button class="text-button" id="import-data">Importar dados</button><input type="file" id="import-file" accept="application/json,.json" hidden></div></div><p class="local-note" id="storage-status">Salvo neste navegador</p>
   </dialog>

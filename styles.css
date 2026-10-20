@@ -70,6 +70,8 @@ svg use[href="#i-star"] { stroke: none; }
 .wheel-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
 .wheel-title-row h2 { display: inline-flex; align-items: center; gap: 9px; min-width: 0; font-size: 17px; font-weight: 600; letter-spacing: -.3px; line-height: 1.4; }
 .pool-count { color: #898693; font-size: 12px; font-weight: 400; letter-spacing: 0; }
+.wheel-tools { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.shuffle-wheel:hover:not(:disabled) { color: var(--accent); }
 .edit-wheel { padding-right: 0; flex: 0 0 auto; color: #aaa6b3; font-size: 12px; }
 .edit-wheel:hover:not(:disabled) { color: var(--accent); background: transparent; }
 .wheel-stage { position: relative; flex: 0 0 auto; width: min(100%, 280px); aspect-ratio: 1; margin: 0 auto 10px; isolation: isolate; }
@@ -249,7 +251,8 @@ select { appearance: auto; }
 .catalog-source a, .profile-link { color: #bca2d1; font-size: 11px; line-height: 1.65; text-decoration-color: #80628f; text-underline-offset: 3px; overflow-wrap: anywhere; }
 .catalog-source a:hover, .profile-link:hover { color: #e1c2f5; }
 .editor-list-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 23px; padding-bottom: 10px; border-bottom: 1px solid #35313d; color: #aaa1b4; font-size: 11px; font-weight: 500; }
-.editor-list-header > span:last-child { color: #8f859a; font-size: 11px; }
+.editor-list-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+.editor-list-actions > span { color: #8f859a; font-size: 11px; }
 .entry-list { max-height: 252px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #49414f #1c1b21; }
 .entry-row { display: flex; align-items: center; gap: 11px; min-height: 64px; padding: 11px 0; border-bottom: 1px solid #302a38; }
 .entry-row:last-child { border-bottom: 0; }
@@ -406,7 +409,7 @@ select { appearance: auto; }
   .entry-avatar { width: 28px; height: 28px; }
   .entry-actions { gap: 0; }
   .entry-used { order: 5; margin-left: 36px; margin-top: -6px; }
-  .editor-list-header > span:last-child { font-size: 11px; }
+  .editor-list-actions > span { font-size: 11px; }
   .backup-actions > div { gap: 14px; }
   .backup-actions .text-button { font-size: 12px; }
   .history-toolbar { gap: 10px; }
