@@ -7,7 +7,7 @@
   'use strict';
 
   var MAX = { friends: 100, cards: 100, anime: 200, history: 300 };
-  var FRIEND_DEFAULTS = ['Hex', 'KV', 'Cap', 'Nando', 'Turbo', 'Mary', 'Kris'];
+  var FRIEND_DEFAULTS = ['Hex', 'KV', 'Cap', 'Nando', 'Turbo', 'Mary', 'Kris', 'Kyoka'];
   var LEGACY_FRIENDS = ['Lucas', 'Ana', 'Pedro', 'Marina', 'Rafael'];
   var ANIME_DEFAULTS = [
     'Fullmetal Alchemist: Brotherhood', 'Death Note', 'Haikyuu!!', 'Violet Evergarden',
@@ -70,7 +70,7 @@
       history: [],
       cycleRoundIds: [],
       cardDefaultsVersion: 1,
-      profileDefaultsVersion: 4,
+      profileDefaultsVersion: 5,
       turnEffect: emptyTurnEffect()
     };
   }
@@ -144,6 +144,22 @@
       state.profileDefaultsVersion = 4;
       changed = true;
     }
+    if (profileVersion < 5) {
+      var kyoka = state.friends.find(function (friend) { return normalizedName(friend.name) === 'kyoka'; });
+      if (!kyoka && state.friends.length < MAX.friends) {
+        kyoka = defaultFriend('Kyoka');
+        state.friends.push(kyoka);
+        changed = true;
+      }
+      if (kyoka) {
+        if (!kyoka.anilistUsername) {
+          kyoka.anilistUsername = 'Kycks';
+          if (state.current.friend && state.current.friend.id === kyoka.id) state.current.friend.anilistUsername = 'Kycks';
+        }
+        state.profileDefaultsVersion = 5;
+        changed = true;
+      }
+    }
     if (changed) prepareTurnEffect(state);
     return changed;
   }
@@ -154,6 +170,7 @@
     if (name === 'Turbo') friend.anilistUsername = 'Turbomob';
     if (name === 'Mary') friend.anilistUsername = 'Katupiry';
     if (name === 'Kris') friend.anilistUsername = 'KrismonKalamity';
+    if (name === 'Kyoka') friend.anilistUsername = 'Kycks';
     return friend;
   }
 
@@ -285,7 +302,7 @@
     state.cardDefaultsVersion = own(input, 'cardDefaultsVersion') ? input.cardDefaultsVersion : 0;
     if (state.cardDefaultsVersion !== 0 && state.cardDefaultsVersion !== 1) fail('Versão de cartas padrão inválida.');
     state.profileDefaultsVersion = own(input, 'profileDefaultsVersion') ? input.profileDefaultsVersion : 0;
-    if (![0, 1, 2, 3, 4].includes(state.profileDefaultsVersion)) fail('Versão de perfis padrão inválida.');
+    if (![0, 1, 2, 3, 4, 5].includes(state.profileDefaultsVersion)) fail('Versão de perfis padrão inválida.');
     var labels = { friends: 'Amigos', cards: 'Cartas', anime: 'Animes' };
     var ids = {};
     ['friends', 'cards', 'anime'].forEach(function (key) {
