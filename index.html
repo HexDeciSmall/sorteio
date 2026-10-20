@@ -7,10 +7,10 @@
   <meta name="description" content="Roletas de nomes, cartas e animes para sortear entre amigos.">
   <title>Sorteio</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css">
-  <script src="core.js" defer></script>
-  <script src="catalog.js" defer></script>
-  <script src="app.js" defer></script>
+  <link rel="stylesheet" href="styles.css?v=cartas-20261020">
+  <script src="core.js?v=cartas-20261020" defer></script>
+  <script src="catalog.js?v=cartas-20261020" defer></script>
+  <script src="app.js?v=cartas-20261020" defer></script>
 </head>
 <body>
   <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -55,6 +55,7 @@
           <div class="wheel-title-row"><h2>Cartas <span class="pool-count" id="count-cards"></span></h2><button class="edit-wheel text-button" data-edit="cards" aria-label="Editar cartas"><svg><use href="#i-edit"/></svg>Editar</button></div>
           <div class="wheel-stage" id="stage-cards"><div class="wheel-orbit"></div><div class="wheel-pointer"></div><div class="wheel-rotor" id="rotor-cards"></div><div class="wheel-hub"><svg><use href="#i-card"/></svg></div></div>
           <div class="wheel-result" id="result-cards" aria-live="polite"><strong>—</strong></div>
+          <div id="card-effect" class="card-effect" hidden><p id="card-effect-message" role="status"></p><div id="card-effect-controls" hidden><label class="form-label"><span id="card-effect-target-label">Retirar nesta vez</span><select id="card-effect-target"></select></label><div class="card-effect-actions"><button id="apply-card-effect" class="button button-primary">Aplicar e girar</button><button id="skip-card-effect" class="text-button">Não usar</button></div></div></div>
           <button class="button button-spin" id="spin-cards" data-spin="cards" aria-label="Girar roleta de cartas"><svg><use href="#i-refresh"/></svg>Girar</button>
         </article>
         <article class="wheel-card anime-card" data-wheel="anime">
@@ -96,6 +97,7 @@
           <label class="form-label" id="profile-field" hidden>Perfil do AniList (opcional)<input id="entry-profile" name="anilist-profile" maxlength="200" autocomplete="off" placeholder="https://anilist.co/user/usuario/"></label>
           <label class="form-label" id="owner-field" hidden>Indicado por<select id="entry-owner"><option value="">Sem indicação</option></select></label>
           <label class="form-label" id="description-field" hidden>Efeito ou penalidade<textarea id="entry-description" maxlength="300" rows="2" placeholder="O que acontece quando esta carta sair?"></textarea></label>
+          <label class="form-label" id="effect-field" hidden>Efeito automático<select id="entry-effect"><option value="none">Somente o texto da carta</option><option value="remove_anime">Retirar um anime nesta vez</option><option value="remove_owner">Retirar indicações de um colega nesta vez</option><option value="infernal">Adicionar os quatro animes de Infernizar</option></select></label>
         </div>
         <div id="anime-search-tools" class="anime-search-tools" hidden><button type="button" id="search-anime" class="button button-quiet"><svg><use href="#i-search"/></svg>Buscar no MAL</button><span id="anime-search-status" class="search-status" role="status"></span></div>
         <ul id="anime-search-results" class="anime-search-results" aria-label="Animes encontrados" hidden></ul>
@@ -103,7 +105,7 @@
         <p id="catalog-source" class="catalog-source" hidden>Dados do <a href="https://myanimelist.net/" target="_blank" rel="noopener noreferrer">MyAnimeList</a> via <a href="https://tenrai.org/" target="_blank" rel="noopener noreferrer">Tenrai</a>, compatível com Jikan. Você também pode cadastrar manualmente.</p>
         <div class="form-actions"><button class="button button-primary" type="submit" id="entry-submit"><svg><use href="#i-plus"/></svg> Adicionar</button><button class="text-button" id="cancel-edit" type="button" hidden>Cancelar edição</button></div>
       </form>
-      <div class="editor-list-header"><span id="list-label"></span><span>EDITAR / REMOVER</span></div><div class="entry-list" id="entry-list"></div>
+      <div class="editor-list-header"><span id="list-label"></span><button id="add-standard-cards" class="text-button" hidden>Cartas padrão</button><span>EDITAR / REMOVER</span></div><div class="entry-list" id="entry-list"></div>
     </div>
     <div class="backup-actions"><div><button class="text-button" id="export-data"><svg><use href="#i-download"/></svg> Exportar dados</button><button class="text-button" id="import-data">Importar dados</button><input type="file" id="import-file" accept="application/json,.json" hidden></div></div><p class="local-note" id="storage-status">Salvo neste navegador</p>
   </dialog>

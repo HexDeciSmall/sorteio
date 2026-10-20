@@ -109,6 +109,44 @@
     if (result.kind === 'unrated') return 'Sem nota' + status;
     return result.message || (result.kind === 'not-listed' ? 'Não consta na lista pública.' : 'Consulta indisponível.');
   }
+  function renderCardEffect() {
+    const info = C.effectInfo(state);
+    const type = state.current.card && state.current.card.effect || 'none';
+    const panel = $('#card-effect');
+    const controls = $('#card-effect-controls');
+    const message = $('#card-effect-message');
+    panel.hidden = !state.current.card || type === 'none';
+    controls.hidden = true;
+    if (panel.hidden) return;
+    if (type === 'infernal') { message.textContent = 'Os quatro animes entram na roleta depois de confirmar o seu anime.'; return; }
+    if (!state.current.friend) { message.textContent = 'Sorteie um nome para usar esta carta.'; return; }
+    if (!info.pending) {
+      const removed = info.excludedAnimeIds.map((id) => state.anime.find((anime) => anime.id === id)).filter(Boolean);
+      message.textContent = removed.length ? 'Fora só nesta vez: ' + removed.map((anime) => anime.name).join(', ') + '.' : 'Efeito dispensado nesta vez.';
+      return;
+    }
+    controls.hidden = false;
+    const pool = state.anime.filter((anime) => !state.used.anime.includes(anime.id));
+    const select = $('#card-effect-target');
+    const previous = select.value;
+    let options;
+    if (type === 'remove_anime') {
+      $('#card-effect-target-label').textContent = 'Anime para retirar nesta vez';
+      options = pool.length > 1 ? pool.map((anime) => ({ id: anime.id, label: anime.name })) : [];
+      message.textContent = 'Escolha um anime para ficar fora do seu sorteio.';
+    } else {
+      $('#card-effect-target-label').textContent = 'Indicações de qual colega?';
+      options = state.friends.map((friend) => ({ id: friend.id, label: friend.name, count: pool.filter((anime) => anime.ownerId === friend.id).length })).filter((friend) => friend.count > 0 && friend.count < pool.length).map((friend) => ({ id: friend.id, label: friend.label + ' · ' + friend.count + (friend.count === 1 ? ' anime' : ' animes') }));
+      message.textContent = 'As indicações desse colega ficam fora só nesta vez.';
+    }
+    if (!options.length) message.textContent = 'Não há opções para retirar sem esvaziar a roleta. Use “Não usar” para continuar.';
+    select.innerHTML = '<option value="">Selecione…</option>' + options.map((option) => '<option value="' + option.id + '">' + html(option.label) + '</option>').join('');
+    if (options.some((option) => option.id === previous)) select.value = previous;
+    select.disabled = busy || !options.length;
+    $('#apply-card-effect').disabled = busy || !select.value;
+    $('#apply-card-effect').textContent = state.current.anime ? 'Aplicar' : 'Aplicar e girar';
+    $('#skip-card-effect').disabled = busy;
+  }
   function syncAnimeDetails() {
     const anime = state.current.anime;
     const signature = anime ? JSON.stringify([anime.id, anime.malId, state.friends.map((item) => [item.id, item.name, item.anilistUsername])]) : '';
@@ -268,24 +306,28 @@
     } else result.innerHTML = '<strong aria-label="Nenhum resultado">—</strong>';
   }
   function renderControls() {
+    C.prepareTurnEffect(state);
+    const effect = C.effectInfo(state);
     const filled = Object.values(state.current).filter(Boolean).length;
-    const ready = filled === 3;
+    const ready = filled === 3 && !effect.pending;
     const main = $('#draw-round');
-    $('.draw-actions').hidden = ready;
-    main.disabled = busy || ready || ['friends', 'cards', 'anime'].some((key) => !state.current[keyMap[key]] && !C.available(state, key).length);
+    $('.draw-actions').hidden = ready || effect.pending;
+    main.disabled = busy || ready || effect.pending || ['friends', 'cards', 'anime'].some((key) => !state.current[keyMap[key]] && !C.available(state, key).length);
     main.innerHTML = icon(busy ? 'refresh' : 'dice') + (busy ? ' Girando…' : filled && !ready ? ' Completar' : ' Girar tudo');
-    $$('[data-spin]').forEach((button) => button.disabled = busy || (ready && button.dataset.spin !== 'anime') || !C.available(state, button.dataset.spin).length);
+    $$('[data-spin]').forEach((button) => button.disabled = busy || (ready && button.dataset.spin !== 'anime') || (effect.pending && button.dataset.spin === 'anime') || !C.available(state, button.dataset.spin).length);
     $$('[data-edit], [data-view], #manage-all, [data-delete-result]').forEach((button) => button.disabled = busy);
     $('#reset-cycle').disabled = busy || !(state.used.friends.length || state.used.anime.length || C.cycleRecords(state).length || filled);
     $('#anime-decision').hidden = !state.current.anime;
     $('#spin-anime').hidden = !!state.current.anime;
     $('#confirm-anime').disabled = busy || !ready;
-    $('#reject-anime').disabled = busy || !state.current.anime;
+    $('#reject-anime').disabled = busy || effect.pending || !state.current.anime;
     $('#anime-confirm-hint').hidden = !state.current.anime || ready || busy;
+    $('#anime-confirm-hint').textContent = effect.pending ? 'Resolva a carta antes de confirmar.' : 'Sorteie também o nome e a carta.';
     $('#sound-toggle').setAttribute('aria-pressed', String(state.settings.sound));
     $('#sound-toggle').setAttribute('aria-label', state.settings.sound ? 'Desativar som' : 'Ativar som');
     $('#sound-toggle').title = state.settings.sound ? 'Desativar som' : 'Ativar som';
     $('#sound-toggle').innerHTML = icon(state.settings.sound ? 'volume' : 'mute');
+    renderCardEffect();
     syncAnimeDetails();
   }
   function renderHistory() {
@@ -308,6 +350,7 @@
     $('#copy-results').disabled = !records.length || busy;
   }
   function renderAll() {
+    C.prepareTurnEffect(state);
     ['friends', 'cards', 'anime'].forEach(renderWheel);
     renderControls();
     renderHistory();
@@ -330,6 +373,8 @@
   }
   function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
   async function animateSpin(key, excludedAnimeId) {
+    C.prepareTurnEffect(state);
+    if (key === 'anime' && C.effectInfo(state).pending) throw new Error('Escolha o efeito da carta antes de girar o anime.');
     const pool = C.available(state, key);
     const choice = C.pick(state, key, key === 'anime' ? excludedAnimeId : undefined);
     if (!choice) throw new Error(excludedAnimeId ? 'Não há outro anime disponível. Adicione outro anime ou gire novamente.' : 'Esta roleta ficou sem opções. Adicione itens ou limpe os resultados para iniciar outro ciclo.');
@@ -352,6 +397,7 @@
     }
     try { await sleep(duration + 40); } finally { clearInterval(tickTimer); card.classList.remove('is-spinning'); }
     state.current[keyMap[key]] = { ...choice };
+    C.prepareTurnEffect(state);
     renderResult(key);
     tone(740, 0.16, 0.04);
     $('#spin-announcer').textContent = (key === 'friends' ? 'Amigo sorteado: ' : key === 'cards' ? 'Carta sorteada: ' : 'Anime sorteado: ') + choice.name;
@@ -365,11 +411,15 @@
     renderCycleResults();
     tone(250, 0.03, 0.001);
     try {
-      for (const key of keys) { await animateSpin(key, excludedAnimeId); renderControls(); }
+      for (const key of keys) {
+        C.prepareTurnEffect(state);
+        if (key === 'anime' && C.effectInfo(state).pending) break;
+        await animateSpin(key, excludedAnimeId); renderControls();
+      }
     } catch (error) { toast(error.message, true); }
     finally {
-      busy = false; document.body.removeAttribute('aria-busy'); renderControls(); renderCycleResults();
-      (Object.values(state.current).every(Boolean) ? $('#confirm-anime') : $('#draw-round').disabled ? $('#reset-cycle') : $('#draw-round')).focus({ preventScroll: true });
+      busy = false; document.body.removeAttribute('aria-busy'); renderAll();
+      (C.effectInfo(state).pending ? $('#card-effect-target').disabled ? $('#skip-card-effect') : $('#card-effect-target') : Object.values(state.current).every(Boolean) ? $('#confirm-anime') : $('#draw-round').disabled ? $('#reset-cycle') : $('#draw-round')).focus({ preventScroll: true });
     }
   }
   function confetti() {
@@ -416,6 +466,8 @@
     $('#owner-field').hidden = isFriends || isCards;
     $('#profile-field').hidden = !isFriends;
     $('#description-field').hidden = !isCards;
+    $('#effect-field').hidden = !isCards;
+    $('#add-standard-cards').hidden = !isCards;
     $('#anime-search-tools').hidden = isFriends || isCards;
     $('#catalog-source').hidden = isFriends || isCards;
     renderCatalogSelection();
@@ -439,12 +491,14 @@
     $('#editor-dialog').showModal();
   }
   function reconcileCurrent() {
+    C.prepareTurnEffect(state);
     ['friends', 'cards', 'anime'].forEach((key) => {
       const selected = state.current[keyMap[key]];
       if (!selected) return;
       const valid = C.available(state, key).find((item) => item.id === selected.id);
       state.current[keyMap[key]] = valid ? { ...valid } : null;
     });
+    C.prepareTurnEffect(state);
   }
   function saveEntry(event) {
     event.preventDefault();
@@ -454,7 +508,7 @@
     const list = state[editorTab];
     const max = editorTab === 'anime' ? 200 : 100;
     if (!editingId && list.length >= max) { toast('Esta lista permite até ' + max + ' opções.', true); return; }
-    if (list.some((item) => item.id !== editingId && canonicalName(item.name) === canonicalName(name))) { toast('Esse nome já está na lista. Edite a opção existente.', true); return; }
+    if (editorTab !== 'cards' && list.some((item) => item.id !== editingId && canonicalName(item.name) === canonicalName(name))) { toast('Esse nome já está na lista. Edite a opção existente.', true); return; }
     const item = { id: editingId || C.uid(), name };
     if (editorTab === 'friends') {
       try {
@@ -462,7 +516,7 @@
         if (username) item.anilistUsername = username;
       } catch (error) { toast(error.message, true); $('#entry-profile').focus(); return; }
     }
-    if (editorTab === 'cards') item.description = $('#entry-description').value.trim();
+    if (editorTab === 'cards') { item.description = $('#entry-description').value.trim(); item.effect = $('#entry-effect').value; }
     if (editorTab === 'anime') {
       item.ownerId = $('#entry-owner').value || null;
       if (item.ownerId && state.anime.filter((anime) => anime.ownerId === item.ownerId && anime.id !== editingId).length >= 2) { toast('Esse amigo já tem 2 indicações. Escolha outro ou edite uma indicação.', true); return; }
@@ -486,7 +540,7 @@
     renderEditor();
     $('#entry-name').value = item.name;
     if (editorTab === 'friends') $('#entry-profile').value = item.anilistUsername || '';
-    if (editorTab === 'cards') $('#entry-description').value = item.description;
+    if (editorTab === 'cards') { $('#entry-description').value = item.description; $('#entry-effect').value = item.effect || 'none'; }
     if (editorTab === 'anime') $('#entry-owner').value = item.ownerId || '';
     $('#entry-submit').innerHTML = icon('check') + ' Salvar alteração';
     $('#cancel-edit').hidden = false;
@@ -528,6 +582,17 @@
   }
 
   $('#draw-round').addEventListener('click', () => runSpins(['friends', 'cards', 'anime'].filter((key) => !state.current[keyMap[key]])));
+  function useCardEffect(targetId) {
+    if (busy) return;
+    try {
+      C.applyTurnEffect(state, targetId);
+      persist(); renderAll();
+      if (!state.current.anime && C.available(state, 'anime').length) runSpins(['anime']);
+    } catch (error) { toast(error.message, true); }
+  }
+  $('#card-effect-target').addEventListener('change', () => $('#apply-card-effect').disabled = busy || !$('#card-effect-target').value);
+  $('#apply-card-effect').addEventListener('click', () => { const targetId = $('#card-effect-target').value; if (targetId) useCardEffect(targetId); });
+  $('#skip-card-effect').addEventListener('click', () => useCardEffect(null));
   $$('[data-spin]').forEach((button) => button.addEventListener('click', () => runSpins([button.dataset.spin])));
   $('#confirm-anime').addEventListener('click', () => {
     if (busy || !Object.values(state.current).every(Boolean)) return;
@@ -538,7 +603,8 @@
       const finished = !C.available(state, 'friends').length;
       if (finished) confetti();
       const animeExhausted = !C.available(state, 'anime').length;
-      toast(finished ? 'Todos já foram sorteados.' : animeExhausted ? 'Resultado confirmado. Adicione mais animes para continuar.' : 'Resultado confirmado.');
+      const added = record.addedInfernalAnime || [];
+      toast(added.length ? 'Resultado confirmado. Infernizar adicionou ' + added.length + (added.length === 1 ? ' anime.' : ' animes.') : record.card.effect === 'infernal' ? 'Resultado confirmado. Os quatro animes já estavam cadastrados.' : finished ? 'Todos já foram sorteados.' : animeExhausted ? 'Resultado confirmado. Adicione mais animes para continuar.' : 'Resultado confirmado.');
       ($('#draw-round').disabled ? $('#reset-cycle') : $('#draw-round')).focus({ preventScroll: true });
     } catch (error) { toast(error.message, true); }
   });
@@ -554,7 +620,7 @@
     if (!button || busy) return;
     const record = C.cycleRecords(state).find((item) => item.id === button.dataset.deleteResult);
     if (!record) return;
-    confirmAction('Excluir resultado de ' + record.friend.name + '?', 'Esta atribuição será removida. O nome e o anime voltam às roletas se ainda estiverem cadastrados.', () => {
+    confirmAction('Excluir resultado de ' + record.friend.name + '?', 'Esta atribuição será removida. O nome e o anime voltam às roletas se ainda estiverem cadastrados.' + ((record.addedInfernalAnime || []).length ? ' Animes adicionados por esta carta também sairão se ainda não foram usados, alterados ou escolhidos em outra rodada.' : ''), () => {
       C.removeRound(state, record.id);
       persist(); renderAll();
       toast('Resultado excluído.');
@@ -618,6 +684,14 @@
     openEditor('anime'); editEntry(id); searchAnimeCatalog();
   });
   $('#cancel-edit').addEventListener('click', () => { resetEntryForm(); renderEditor(); });
+  $('#add-standard-cards').addEventListener('click', () => {
+    if (busy) return;
+    try {
+      const added = C.addStandardCards(state);
+      reconcileCurrent(); persist(); renderAll(); renderEditor();
+      toast(added ? 'Cartas padrão adicionadas.' : 'As cartas padrão já estão na lista.');
+    } catch (error) { toast(error.message, true); }
+  });
   $('#entry-list').addEventListener('click', (event) => { const edit = event.target.closest('[data-entry-edit]'); const remove = event.target.closest('[data-entry-delete]'); if (edit) editEntry(edit.dataset.entryEdit); if (remove) removeEntry(remove.dataset.entryDelete); });
   $('#export-data').addEventListener('click', downloadData);
   $('#import-data').addEventListener('click', () => $('#import-file').click());

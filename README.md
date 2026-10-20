@@ -10,9 +10,9 @@ Extraia todos os arquivos para a mesma pasta e abra `index.html` em um navegador
 
 1. Abra **Editar listas**, no ícone de edição do topo, ou **Editar** em uma das roletas.
 2. Na aba **Nomes**, adicione, edite ou remova os participantes. Se quiser consultar notas pessoais, informe também o link do perfil público de cada amigo no AniList; esse campo é opcional.
-3. Na aba **Cartas**, adicione os nomes e as descrições dos efeitos e das penalidades. Para jogar sem regra extra, você pode cadastrar uma carta chamada Sem efeito.
+3. Na aba **Cartas**, edite os nomes, as descrições e o seletor **Efeito automático**. Use **Cartas padrão** para completar as cartas originais que faltarem, sem duplicar as que já estão cadastradas.
 4. Na aba **Animes**, busque um título no catálogo ou cadastre-o manualmente. Selecione o resultado desejado, escolha quem indicou e finalize em **Adicionar** ou **Salvar alteração**, ao editar. Cada amigo pode ter até **2 indicações**; também é possível cadastrar títulos sem indicação.
-5. Clique em **Girar tudo** para girar as três roletas na sequência. Também é possível usar os botões **Girar** de **Nomes**, **Cartas** e **Animes** individualmente.
+5. Clique em **Girar tudo** para girar as três roletas na sequência. Se a carta pedir uma escolha, selecione a opção e use **Aplicar** ou **Não usar** antes do giro do anime. Também é possível usar os botões **Girar** de **Nomes**, **Cartas** e **Animes** individualmente.
 6. Confira o anime sorteado. Com as três escolhas completas, clique em **Confirmar**, abaixo da roleta de animes, para registrar a rodada em **Resultados**. Só então o nome e o anime saem das opções disponíveis do ciclo.
 7. Se quiser outro anime, clique em **Não, girar outro**. O nome e a carta permanecem, e apenas o anime é sorteado novamente. Confira a nova escolha antes de confirmar.
 8. Depois de confirmar, clique em **Girar tudo** para sortear o próximo colega. Consulte as rodadas anteriores em **Histórico**, no ícone de relógio do topo.
@@ -23,9 +23,24 @@ Recusar um anime não o consome. Se houver outra opção disponível, o título 
 
 Os Resultados mostram as atribuições do ciclo atual na ordem em que aconteceram, no formato **Nome — Anime (efeito da carta)**. Quando a carta não tiver descrição, aparece o nome dela entre parênteses. Use **Copiar**, na seção Resultados, para levar essa lista ao grupo.
 
-Os participantes iniciais são **Hex, KV, Cap, Nando, Turbo, Mary e Kris**. As listas de **Cartas e Animes começam vazias**. Cadastre pelo menos uma carta e um anime para completar um sorteio; depois adicione as indicações e as regras do seu grupo. A atualização também remove os conjuntos antigos de exemplos quando ainda estão intactos, preservando as personalizações.
+Os participantes iniciais são **Hex, KV, Cap, Nando, Turbo, Mary e Kris**. O site começa com **7 segmentos de cartas e nenhum anime**. Adicione os animes do grupo antes de completar um sorteio.
 
-As cartas são regras combinadas entre vocês. O site sorteia e registra o texto da carta; trocas de anime, episódios extras e outras consequências são aplicados manualmente pelo grupo.
+A atualização instala as cartas padrão uma única vez quando encontra uma lista vazia. As listas já personalizadas são mantidas; nelas, use **Cartas padrão** se quiser acrescentar as regras originais. Os antigos animes de exemplo são removidos quando o conjunto ainda está intacto, preservando as personalizações.
+
+### Cartas e efeitos automáticos
+
+O baralho padrão tem três cartas especiais e quatro cópias de Sem Efeito. Cada segmento tem a mesma chance: **Sem Efeito ocupa 4 dos 7 segmentos**. Você pode editar as cartas e escolher seu comportamento em **Efeito automático**; o nome ou a descrição, sozinhos, não ativam uma regra.
+
+| Carta padrão | O que acontece |
+| --- | --- |
+| **Nem a Pau** | Escolha um anime para ficar fora da roleta apenas na vez atual. Use Aplicar para confirmar a escolha ou Não usar para continuar sem a exclusão. |
+| **Preconceito** | Escolha um colega. As indicações dele ficam fora da roleta apenas na vez atual; os animes continuam cadastrados. Use Aplicar ou Não usar. |
+| **Sem Efeito** | Não altera o sorteio. Há quatro cópias no baralho padrão. |
+| **Infernizar** | Ao confirmar o anime da rodada, acrescenta **Hand Shakers, Gamers, Rent a Girlfriend e Terra Formars** à lista de animes, sem duplicar os títulos já cadastrados. |
+
+Nem a Pau e Preconceito são filtros temporários. O site não permite aplicá-los quando isso deixaria a roleta sem animes; use Não usar para continuar nesse caso. A escolha feita para a vez permanece nas recusas do anime, ao recarregar a página e nos backups. Quando a rodada é confirmada, o filtro é encerrado.
+
+Infernizar é obrigatório quando essa carta é confirmada: não exige Aplicar e não oferece Não usar. **Recusar um anime não acrescenta os quatro títulos**; a adição só acontece depois de Confirmar. As cartas personalizadas sem efeito automático apenas registram a descrição, para o grupo aplicar suas próprias regras manualmente.
 
 ### Busca, capas e notas
 
@@ -46,6 +61,8 @@ Nomes e animes **não se repetem no mesmo ciclo**. Assim que uma rodada é confi
 Os itens sorteados continuam cadastrados nas listas de edição; eles não são apagados. Quando quiser começar outro ciclo, clique em **Limpar resultados**, no cabeçalho da seção Resultados, e confirme. Os nomes e animes voltam às roletas, os Resultados do ciclo atual são limpos, e o Histórico permanece guardado. Escolhas pendentes ainda não confirmadas também são descartadas.
 
 Para corrigir uma atribuição, use a lixeira **Excluir resultado** na linha correspondente e confirme. Ela é removida dos Resultados e do Histórico; o nome e o anime voltam a participar se ainda estiverem cadastrados. As outras atribuições continuam guardadas.
+
+Se a atribuição excluída adicionou títulos por Infernizar, essas adições também são desfeitas quando continuam intactas e ainda não foram usadas. Títulos editados, já usados, escolhidos na rodada pendente ou presentes em outro resultado do Histórico são preservados.
 
 O botão de som no topo ativa ou desativa os efeitos sonoros.
 

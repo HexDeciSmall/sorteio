@@ -88,6 +88,15 @@ svg use[href="#i-star"] { stroke: none; }
 .button-spin svg { color: var(--accent); width: 16px; height: 16px; }
 .button-spin:hover:not(:disabled) { border-color: var(--accent); background: #302d36; }
 .is-spinning .button-spin { color: var(--accent); }
+.card-effect { margin: 0 0 12px; padding: 12px; border: 1px solid #5b4c31; border-radius: 8px; background: #2a261f; color: #d7c8a6; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.card-effect p { margin: 0; }
+.card-effect .form-label { margin-top: 10px; font-size: 12px; }
+.card-effect .form-label select { width: 100%; min-width: 0; font-size: 12px; }
+.card-effect-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+.card-effect-actions .button { flex: 1 1 auto; min-width: 0; padding: 10px; font-size: 12px; }
+.card-effect-actions .text-button { flex: 0 0 auto; font-size: 12px; }
+#effect-field { flex-basis: 100%; }
+#add-standard-cards { margin-left: auto; min-height: 32px; padding: 4px; color: var(--gold); font-size: 11px; }
 .anime-decision { display: flex; align-items: stretch; gap: 8px; }
 .anime-decision > .button { flex: 1 1 0; min-width: 0; min-height: 42px; padding: 10px 9px; font-size: 12px; line-height: 1.4; }
 .anime-confirm-hint { margin: 9px 0 0; color: #aaa3b4; font-size: 12px; line-height: 1.5; text-align: center; }

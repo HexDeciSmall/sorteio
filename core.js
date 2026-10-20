@@ -21,6 +21,24 @@
     ['Modo crítico', 'Compartilhe com o grupo sua opinião sobre o anime da semana.'],
     ['Sem spoilers', 'Comente suas impressões sem revelar acontecimentos da história.']
   ];
+  var EFFECT_TYPES = ['none', 'remove_anime', 'remove_owner', 'infernal'];
+  var STANDARD_CARDS = [
+    { name: 'Nem a Pau', description: 'Pode remover um anime na sua vez.', effect: 'remove_anime' },
+    { name: 'Preconceito', description: 'Remove as indicações de um colega na sua vez.', effect: 'remove_owner' },
+    { name: 'Sem Efeito', description: 'Nada Acontece', effect: 'none' },
+    { name: 'Sem Efeito', description: 'Nada Acontece', effect: 'none' },
+    { name: 'Sem Efeito', description: 'Nada Acontece', effect: 'none' },
+    { name: 'Sem Efeito', description: 'Nada Acontece', effect: 'none' },
+    { name: 'Infernizar', description: 'Adiciona Hand Shakers, Gamers, Rent a Girlfriend e Terra Formars assim que seu anime for decidido.', effect: 'infernal' }
+  ];
+  var INFERNAL_ANIME = [
+    { name: 'Hand Shakers', malId: 32981, coverUrl: 'https://cdn.myanimelist.net/images/anime/7/83395.jpg', malScore: 5.23, aliases: ['Hand Shakers'] },
+    { name: 'Gamers', malId: 34280, coverUrl: 'https://cdn.myanimelist.net/images/anime/4/86828.jpg', malScore: 6.72, aliases: ['Gamers', 'Gamers!'] },
+    { name: 'Rent a Girlfriend', malId: 40839, coverUrl: 'https://cdn.myanimelist.net/images/anime/1902/128382.jpg', malScore: 6.8, aliases: ['Rent a Girlfriend', 'Rent-a-Girlfriend', 'Kanojo, Okarishimasu', 'Kanojo Okarishimasu'] },
+    { name: 'Terra Formars', malId: 22687, coverUrl: 'https://cdn.myanimelist.net/images/anime/2/67117.jpg', malScore: 6.98, aliases: ['Terra Formars'] }
+  ];
+  INFERNAL_ANIME.forEach(function (anime) { Object.freeze(anime.aliases); Object.freeze(anime); });
+  Object.freeze(INFERNAL_ANIME);
   var own = function (value, key) { return Object.prototype.hasOwnProperty.call(value, key); };
   var fail = function (message) { throw new Error(message); };
 
@@ -44,13 +62,15 @@
     return {
       version: 1,
       friends: friends,
-      cards: [],
+      cards: STANDARD_CARDS.map(function (card) { return Object.assign({ id: uid() }, card); }),
       anime: [],
       settings: { avoidFriends: true, avoidAnime: true, sound: true },
       used: { friends: [], anime: [] },
       current: { friend: null, card: null, anime: null },
       history: [],
-      cycleRoundIds: []
+      cycleRoundIds: [],
+      cardDefaultsVersion: 1,
+      turnEffect: emptyTurnEffect()
     };
   }
 
@@ -81,13 +101,42 @@
       if (state.current.anime && animeIds.has(state.current.anime.id)) state.current.anime = null;
       changed = true;
     }
-    if (state.cards.length === CARD_DEFAULTS.length && state.cards.every(function (card, i) { return card && card.name === CARD_DEFAULTS[i][0] && card.description === CARD_DEFAULTS[i][1]; })) {
+    if (state.cards.length === CARD_DEFAULTS.length && state.cards.every(function (card, i) { return card && card.name === CARD_DEFAULTS[i][0] && card.description === CARD_DEFAULTS[i][1] && (!card.effect || card.effect === 'none'); })) {
       var cardIds = new Set(state.cards.map(function (card) { return card.id; }));
       state.cards = [];
       if (state.current.card && cardIds.has(state.current.card.id)) state.current.card = null;
       changed = true;
     }
+    if (state.cardDefaultsVersion !== 1) {
+      if (!state.cards.length) addStandardCards(state);
+      state.cardDefaultsVersion = 1;
+      changed = true;
+    }
+    if (changed) prepareTurnEffect(state);
     return changed;
+  }
+
+  function normalizedName(value) {
+    return value.normalize('NFC').replace(/\s+/g, ' ').trim().toLocaleLowerCase('pt-BR');
+  }
+
+  function addStandardCards(state) {
+    var existing = new Map();
+    state.cards.forEach(function (card) {
+      var key = normalizedName(card.name) + ':' + cardEffect(card);
+      existing.set(key, (existing.get(key) || 0) + 1);
+    });
+    var needed = new Map();
+    var additions = STANDARD_CARDS.filter(function (card) {
+      var key = normalizedName(card.name) + ':' + card.effect;
+      var count = (needed.get(key) || 0) + 1;
+      needed.set(key, count);
+      return count > (existing.get(key) || 0);
+    });
+    if (state.cards.length + additions.length > MAX.cards) fail('Não há espaço para adicionar as cartas padrão. O limite é de 100 cartas.');
+    additions.forEach(function (card) { state.cards.push(Object.assign({ id: uid() }, card)); });
+    state.cardDefaultsVersion = 1;
+    return additions.length;
   }
 
   function object(value, label) {
@@ -166,7 +215,11 @@
       name: string(field(value, 'name', label + '.name'), type === 'anime' ? 200 : 80, label + ': nome', false)
     };
     if (type === 'friends' && own(value, 'anilistUsername')) result.anilistUsername = normalizeAniListProfile(value.anilistUsername);
-    if (type === 'cards') result.description = string(field(value, 'description', label + '.description'), 300, label + ': descrição', true);
+    if (type === 'cards') {
+      result.description = string(field(value, 'description', label + '.description'), 300, label + ': descrição', true);
+      result.effect = own(value, 'effect') ? value.effect : 'none';
+      if (!EFFECT_TYPES.includes(result.effect)) fail(label + ': efeito de carta inválido.');
+    }
     if (type === 'anime') {
       var ownerId = field(value, 'ownerId', label + '.ownerId');
       result.ownerId = ownerId === null ? null : id(ownerId, label + ': indicação');
@@ -188,6 +241,8 @@
     object(input, 'O arquivo');
     if (field(input, 'version', 'version') !== 1) fail('Versão de arquivo incompatível. Use uma exportação da versão 1.');
     var state = { version: 1 };
+    state.cardDefaultsVersion = own(input, 'cardDefaultsVersion') ? input.cardDefaultsVersion : 0;
+    if (state.cardDefaultsVersion !== 0 && state.cardDefaultsVersion !== 1) fail('Versão de cartas padrão inválida.');
     var labels = { friends: 'Amigos', cards: 'Cartas', anime: 'Animes' };
     var ids = {};
     ['friends', 'cards', 'anime'].forEach(function (key) {
@@ -197,8 +252,8 @@
       ids[key] = unique(state[key], labels[key]);
       var names = new Set();
       state[key].forEach(function (item) {
-        var name = item.name.normalize('NFC').replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR');
-        if (names.has(name)) fail(labels[key] + ' contém nomes repetidos. Remova a duplicata para manter chances iguais.');
+        var name = normalizedName(item.name);
+        if (key !== 'cards' && names.has(name)) fail(labels[key] + ' contém nomes repetidos. Remova a duplicata para manter chances iguais.');
         names.add(name);
       });
     });
@@ -242,13 +297,23 @@
       object(value, label);
       var at = string(field(value, 'at', label + '.at'), 40, label + ': data', false);
       if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(at) || !Number.isFinite(Date.parse(at))) fail(label + ' possui uma data inválida.');
-      return {
+      var record = {
         id: id(field(value, 'id', label + '.id'), label),
         at: new Date(at).toISOString(),
         friend: entry(field(value, 'friend', label + '.friend'), 'friends', label + ': amigo'),
         card: entry(field(value, 'card', label + '.card'), 'cards', label + ': carta'),
         anime: entry(field(value, 'anime', label + '.anime'), 'anime', label + ': anime')
       };
+      if (own(value, 'addedInfernalAnime')) {
+        if (record.card.effect !== 'infernal') fail(label + ': adições de Infernizar exigem a carta correspondente.');
+        record.addedInfernalAnime = list(value.addedInfernalAnime, 4, label + ': animes adicionados').map(function (anime) {
+          var added = entry(anime, 'anime', label + ': anime adicionado');
+          if (added.ownerId !== null || !INFERNAL_ANIME.some(function (seed) { return seed.malId === added.malId; })) fail(label + ': anime adicionado por Infernizar inválido.');
+          return added;
+        });
+        unique(record.addedInfernalAnime, label + ': animes adicionados');
+      }
+      return record;
     });
     var historyIds = unique(state.history, 'Histórico');
     if (own(input, 'cycleRoundIds')) {
@@ -284,7 +349,7 @@
       var choice = entry(value, pair[1], 'Sorteio atual: ' + pair[0]);
       var original = state[pair[1]].find(function (item) { return item.id === choice.id; });
       if (!original) fail('O sorteio atual contém um item que não existe mais.');
-      if (!available(state, pair[1]).some(function (item) { return item.id === choice.id; })) {
+      if (!baseAvailable(state, pair[1]).some(function (item) { return item.id === choice.id; })) {
         var legacyRepeatAllowed = !own(input, 'cycleRoundIds') && ((pair[1] === 'friends' && settings.avoidFriends === false) || (pair[1] === 'anime' && settings.avoidAnime === false));
         if (!legacyRepeatAllowed) fail('O sorteio atual contém uma opção que já participou deste ciclo.');
         state.current[pair[0]] = null;
@@ -292,6 +357,22 @@
       }
       state.current[pair[0]] = Object.assign({}, original);
     });
+    state.turnEffect = emptyTurnEffect();
+    if (own(input, 'turnEffect')) {
+      var turn = object(input.turnEffect, 'Efeito desta vez');
+      var cardId = field(turn, 'cardId', 'turnEffect.cardId');
+      var friendId = field(turn, 'friendId', 'turnEffect.friendId');
+      var resolved = field(turn, 'resolved', 'turnEffect.resolved');
+      if (typeof resolved !== 'boolean') fail('A resolução do efeito deve ser verdadeira ou falsa.');
+      var turnType = own(turn, 'type') ? turn.type : cardEffect(state.current.card);
+      if (!EFFECT_TYPES.includes(turnType)) fail('O efeito desta vez é inválido.');
+      var excluded = list(field(turn, 'excludedAnimeIds', 'turnEffect.excludedAnimeIds'), MAX.anime, 'Exclusões desta vez').map(function (value) { return id(value, 'Anime excluído desta vez'); });
+      if (new Set(excluded).size !== excluded.length) fail('As exclusões desta vez contêm animes repetidos.');
+      if (!resolved && excluded.length) fail('Um efeito pendente não pode excluir animes.');
+      state.turnEffect = { cardId: cardId === null ? null : id(cardId, 'Carta do efeito'), friendId: friendId === null ? null : id(friendId, 'Amigo do efeito'), type: turnType, resolved: resolved, excludedAnimeIds: excluded };
+    }
+    prepareTurnEffect(state);
+    if (state.current.anime && effectInfo(state).excludedAnimeIds.includes(state.current.anime.id)) state.current.anime = null;
     return state;
   }
 
@@ -316,11 +397,98 @@
     return state.history.filter(function (record) { return ids.has(record.id); });
   }
 
-  function available(state, key) {
+  function baseAvailable(state, key) {
     if (!['friends', 'cards', 'anime'].includes(key)) fail('Roleta inválida.');
     if (key === 'cards') return state.cards.slice();
     var used = new Set(state.used[key]);
     return state[key].filter(function (item) { return !used.has(item.id); });
+  }
+
+  function emptyTurnEffect() {
+    return { cardId: null, friendId: null, type: 'none', resolved: false, excludedAnimeIds: [] };
+  }
+
+  function cardEffect(card) {
+    var type = card && card.effect !== undefined ? card.effect : 'none';
+    if (!EFFECT_TYPES.includes(type)) fail('Efeito de carta inválido.');
+    return type;
+  }
+
+  function turnContext(state) {
+    var current = state.current || {};
+    return {
+      friend: current.friend && state.friends.find(function (item) { return item.id === current.friend.id; }),
+      card: current.card && state.cards.find(function (item) { return item.id === current.card.id; })
+    };
+  }
+
+  function preparedTurnEffect(state) {
+    var context = turnContext(state);
+    if (!context.friend || !context.card) return emptyTurnEffect();
+    var type = cardEffect(context.card);
+    var previous = state.turnEffect || emptyTurnEffect();
+    var matches = previous.cardId === context.card.id && previous.friendId === context.friend.id && previous.type === type;
+    var automatic = type === 'none' || type === 'infernal';
+    var result = { cardId: context.card.id, friendId: context.friend.id, type: type, resolved: automatic || (matches && previous.resolved === true), excludedAnimeIds: [] };
+    if (automatic || !matches || !result.resolved) return result;
+    var pool = baseAvailable(state, 'anime');
+    var ids = new Set(pool.map(function (item) { return item.id; }));
+    result.excludedAnimeIds = (previous.excludedAnimeIds || []).filter(function (value) { return ids.has(value); });
+    var invalidOwner = false;
+    if (type === 'remove_owner' && result.excludedAnimeIds.length) {
+      var excludedIds = new Set(result.excludedAnimeIds);
+      var excludedAnime = pool.filter(function (anime) { return excludedIds.has(anime.id); });
+      var owner = excludedAnime[0].ownerId;
+      invalidOwner = owner === null || !state.friends.some(function (friend) { return friend.id === owner; }) || excludedAnime.some(function (anime) { return anime.ownerId !== owner; }) || pool.some(function (anime) { return anime.ownerId === owner && !excludedIds.has(anime.id); });
+    }
+    if (invalidOwner || (type === 'remove_anime' && result.excludedAnimeIds.length > 1) || (pool.length && result.excludedAnimeIds.length >= pool.length)) {
+      result.resolved = false;
+      result.excludedAnimeIds = [];
+    }
+    return result;
+  }
+
+  function effectInfo(state) {
+    var turn = preparedTurnEffect(state);
+    return { type: turn.type, pending: turn.cardId !== null && !turn.resolved, excludedAnimeIds: turn.excludedAnimeIds.slice() };
+  }
+
+  function prepareTurnEffect(state) {
+    state.turnEffect = preparedTurnEffect(state);
+    if (state.current.anime && state.turnEffect.excludedAnimeIds.includes(state.current.anime.id)) state.current.anime = null;
+    return effectInfo(state);
+  }
+
+  function applyTurnEffect(state, targetId) {
+    var turn = preparedTurnEffect(state);
+    if (!turn.cardId || !turn.friendId || (turn.type !== 'remove_anime' && turn.type !== 'remove_owner')) fail('Esta vez não possui um efeito de remoção pendente.');
+    if (turn.resolved) fail('O efeito desta carta já foi usado nesta vez.');
+    var excluded = [];
+    if (targetId !== null) {
+      id(targetId, 'Alvo do efeito');
+      var pool = baseAvailable(state, 'anime');
+      if (turn.type === 'remove_anime') {
+        if (!pool.some(function (item) { return item.id === targetId; })) fail('Escolha um anime disponível para remover nesta vez.');
+        excluded = [targetId];
+      } else {
+        if (!state.friends.some(function (friend) { return friend.id === targetId; })) fail('Escolha um colega que possui indicações disponíveis.');
+        excluded = pool.filter(function (item) { return item.ownerId === targetId; }).map(function (item) { return item.id; });
+        if (!excluded.length) fail('Esse colega não possui indicações disponíveis nesta vez.');
+      }
+      if (pool.length - excluded.length < 1) fail('O efeito não pode remover a última opção de anime disponível.');
+    }
+    turn.resolved = true;
+    turn.excludedAnimeIds = excluded;
+    state.turnEffect = turn;
+    if (state.current.anime && excluded.includes(state.current.anime.id)) state.current.anime = null;
+    return effectInfo(state);
+  }
+
+  function available(state, key) {
+    var pool = baseAvailable(state, key);
+    if (key !== 'anime') return pool;
+    var excluded = new Set(effectInfo(state).excludedAnimeIds);
+    return pool.filter(function (item) { return !excluded.has(item.id); });
   }
 
   function secureIndex(length) {
@@ -349,9 +517,24 @@
 
   function clearCurrent(state) {
     state.current = { friend: null, card: null, anime: null };
+    state.turnEffect = emptyTurnEffect();
+  }
+
+  function aliasKey(value) {
+    return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]/g, '');
+  }
+
+  function infernalAdditions(state) {
+    return INFERNAL_ANIME.filter(function (seed) {
+      var aliases = new Set(seed.aliases.map(aliasKey));
+      return !state.anime.some(function (anime) { return anime.malId === seed.malId || aliases.has(aliasKey(anime.name)); });
+    }).map(function (seed) {
+      return Object.assign({ id: uid(), name: seed.name, ownerId: null }, normalizeAnimeMetadata(seed));
+    });
   }
 
   function commitRound(state) {
+    if (effectInfo(state).pending) fail('Resolva o efeito da carta antes de confirmar o anime.');
     var selections = {};
     [['friend', 'friends'], ['card', 'cards'], ['anime', 'anime']].forEach(function (pair) {
       var choice = state.current[pair[0]];
@@ -361,7 +544,11 @@
       if (!available(state, pair[1]).some(function (item) { return item.id === choice.id; })) fail('Uma opção sorteada já participou deste ciclo. Faça um novo sorteio.');
       selections[pair[0]] = Object.assign({}, original);
     });
+    selections.card.effect = cardEffect(selections.card);
+    var additions = selections.card.effect === 'infernal' ? infernalAdditions(state) : [];
+    if (state.anime.length + additions.length > MAX.anime) fail('Não há espaço para os animes de Infernizar. O limite é de 200 animes; remova opções antes de confirmar.');
     var record = { id: uid(), at: new Date().toISOString(), friend: selections.friend, card: selections.card, anime: selections.anime };
+    if (selections.card.effect === 'infernal') record.addedInfernalAnime = additions.map(function (item) { return Object.assign({}, item); });
     var cycleIds = state.cycleRoundIds || inferCycleRoundIds(state);
     state.history.push(record);
     cycleIds.push(record.id);
@@ -370,6 +557,7 @@
     state.cycleRoundIds = cycleIds.filter(function (value) { return historyIds.has(value); });
     if (!state.used.friends.includes(selections.friend.id)) state.used.friends.push(selections.friend.id);
     if (!state.used.anime.includes(selections.anime.id)) state.used.anime.push(selections.anime.id);
+    additions.forEach(function (item) { state.anime.push(item); });
     clearCurrent(state);
     return record;
   }
@@ -388,6 +576,18 @@
         state.used[pair[0]] = state.used[pair[0]].filter(function (value) { return value !== removedId; });
       }
     });
+    if (record.addedInfernalAnime && record.addedInfernalAnime.length) {
+      var removableIds = new Set();
+      record.addedInfernalAnime.forEach(function (snapshot) {
+        var anime = state.anime.find(function (item) { return item.id === snapshot.id; });
+        if (!anime || state.used.anime.includes(snapshot.id) || (state.current.anime && state.current.anime.id === snapshot.id) || state.history.some(function (item) { return item.anime.id === snapshot.id; })) return;
+        var unchanged = false;
+        try { unchanged = JSON.stringify(entry(anime, 'anime', 'Anime atual')) === JSON.stringify(entry(snapshot, 'anime', 'Anime adicionado')); } catch (error) { unchanged = false; }
+        if (unchanged) removableIds.add(snapshot.id);
+      });
+      state.anime = state.anime.filter(function (anime) { return !removableIds.has(anime.id); });
+      prepareTurnEffect(state);
+    }
     return record;
   }
 
@@ -411,5 +611,5 @@
     return currentDegrees + turns * 360 + modulo(target - modulo(currentDegrees));
   }
 
-  return { uid: uid, createState: createState, migrateDefaults: migrateDefaults, normalizeState: normalizeState, normalizeAniListProfile: normalizeAniListProfile, normalizeAnimeMetadata: normalizeAnimeMetadata, available: available, secureIndex: secureIndex, pick: pick, rejectAnime: rejectAnime, commitRound: commitRound, removeRound: removeRound, cycleRecords: cycleRecords, clearCurrent: clearCurrent, resetCycle: resetCycle, escapeHtml: escapeHtml, wheelTarget: wheelTarget };
+  return { uid: uid, createState: createState, migrateDefaults: migrateDefaults, addStandardCards: addStandardCards, normalizeState: normalizeState, normalizeAniListProfile: normalizeAniListProfile, normalizeAnimeMetadata: normalizeAnimeMetadata, effectInfo: effectInfo, prepareTurnEffect: prepareTurnEffect, applyTurnEffect: applyTurnEffect, INFERNAL_ANIME: INFERNAL_ANIME, available: available, secureIndex: secureIndex, pick: pick, rejectAnime: rejectAnime, commitRound: commitRound, removeRound: removeRound, cycleRecords: cycleRecords, clearCurrent: clearCurrent, resetCycle: resetCycle, escapeHtml: escapeHtml, wheelTarget: wheelTarget };
 });
