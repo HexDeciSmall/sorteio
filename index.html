@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#141416">
+  <meta name="description" content="Roletas de nomes, cartas e animes para sortear entre amigos.">
+  <title>Sorteio</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="core.js" defer></script>
+  <script src="catalog.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 1 2.8 7.5L23 12l-8.2 3.5L12 23l-2.8-7.5L1 12l8.2-3.5z" fill="currentColor"/></symbol>
+    <symbol id="i-dice" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4" transform="rotate(-12 12 12)"/><path d="M8.5 8.5h.01M15.5 8.5h.01M12 12h.01M8.5 15.5h.01M15.5 15.5h.01" stroke-width="3" stroke-linecap="round"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h6m4 0h6M4 17h10m4 0h2"/><circle cx="12" cy="7" r="2"/><circle cx="16" cy="17" r="2"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 8a8 8 0 1 0 .5 7M20 3v5h-5"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="m11 5-6 4H2v6h3l6 4zM15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="m11 5-6 4H2v6h3l6 4zM16 9l6 6m0-6-6 6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></symbol>
+    <symbol id="i-card" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="m12 7 1.3 3.7L17 12l-3.7 1.3L12 17l-1.3-3.7L7 12l3.7-1.3z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m9 5 11 7-11 7z"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="m15 5 4 4M4 20l5-1L20 8a2.8 2.8 0 0 0-4-4L5 15z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M15 8V3H3v12h5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+  </svg>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Sorteio, início">Sorteio<span class="brand-dot"></span></a>
+      <div class="top-actions">
+        <button class="icon-button" id="sound-toggle" aria-label="Desativar som" title="Desativar som" aria-pressed="true"><svg><use href="#i-volume"/></svg></button>
+        <button class="icon-button history-trigger" data-view="history" aria-label="Histórico" title="Histórico"><svg><use href="#i-clock"/></svg><span id="history-nav-count" class="nav-count" hidden>0</span></button>
+        <button class="icon-button" id="manage-all" aria-label="Editar listas" title="Editar listas"><svg><use href="#i-sliders"/></svg></button>
+      </div>
+    </header>
+    <main id="draw-view" aria-label="Roletas">
+      <div class="wheels-grid">
+        <article class="wheel-card friend-card" data-wheel="friends">
+          <div class="wheel-title-row"><h2>Nomes <span class="pool-count" id="count-friends"></span></h2><button class="edit-wheel text-button" data-edit="friends" aria-label="Editar participantes"><svg><use href="#i-edit"/></svg>Editar</button></div>
+          <div class="wheel-stage" id="stage-friends"><div class="wheel-orbit"></div><div class="wheel-pointer"></div><div class="wheel-rotor" id="rotor-friends"></div><div class="wheel-hub"><svg><use href="#i-user"/></svg></div></div>
+          <div class="wheel-result" id="result-friends" aria-live="polite"><strong>—</strong></div>
+          <button class="button button-spin" id="spin-friends" data-spin="friends" aria-label="Girar roleta de nomes"><svg><use href="#i-refresh"/></svg>Girar</button>
+        </article>
+        <article class="wheel-card card-card" data-wheel="cards">
+          <div class="wheel-title-row"><h2>Cartas <span class="pool-count" id="count-cards"></span></h2><button class="edit-wheel text-button" data-edit="cards" aria-label="Editar cartas"><svg><use href="#i-edit"/></svg>Editar</button></div>
+          <div class="wheel-stage" id="stage-cards"><div class="wheel-orbit"></div><div class="wheel-pointer"></div><div class="wheel-rotor" id="rotor-cards"></div><div class="wheel-hub"><svg><use href="#i-card"/></svg></div></div>
+          <div class="wheel-result" id="result-cards" aria-live="polite"><strong>—</strong></div>
+          <button class="button button-spin" id="spin-cards" data-spin="cards" aria-label="Girar roleta de cartas"><svg><use href="#i-refresh"/></svg>Girar</button>
+        </article>
+        <article class="wheel-card anime-card" data-wheel="anime">
+          <div class="wheel-title-row"><h2>Animes <span class="pool-count" id="count-anime"></span></h2><button class="edit-wheel text-button" data-edit="anime" aria-label="Editar animes"><svg><use href="#i-edit"/></svg>Editar</button></div>
+          <div class="wheel-stage" id="stage-anime"><div class="wheel-orbit"></div><div class="wheel-pointer"></div><div class="wheel-rotor" id="rotor-anime"></div><div class="wheel-hub"><svg><use href="#i-play"/></svg></div></div>
+          <div class="wheel-result" id="result-anime" aria-live="polite"><strong>—</strong></div>
+          <div id="anime-details" class="anime-details" hidden>
+            <div class="anime-info"><img id="anime-cover" class="anime-cover" src="poster-placeholder.svg" alt=""><div class="mal-meta"><a id="anime-mal-link" target="_blank" rel="noopener noreferrer" hidden>MyAnimeList ↗</a><span id="anime-mal-score"></span><small id="anime-owner"></small><button id="link-current-anime" class="text-button" hidden>Vincular no MAL</button></div></div>
+            <div id="personal-rating" class="personal-rating" role="status"></div><button id="retry-personal-rating" class="text-button" hidden>Tentar novamente</button>
+            <details id="group-ratings" class="group-ratings" hidden><summary>Notas dos colegas <span class="rating-source">AniList</span></summary><ul id="group-ratings-list"></ul><button id="retry-group-ratings" class="text-button" hidden>Tentar notas novamente</button></details>
+          </div>
+          <div id="anime-decision" class="anime-decision" hidden><button id="confirm-anime" class="button button-primary" disabled><svg><use href="#i-check"/></svg>Confirmar</button><button id="reject-anime" class="button button-quiet">Não, girar outro</button></div>
+          <small id="anime-confirm-hint" class="anime-confirm-hint" hidden>Sorteie também o nome e a carta.</small>
+          <button class="button button-spin" id="spin-anime" data-spin="anime" aria-label="Girar roleta de animes"><svg><use href="#i-refresh"/></svg>Girar</button>
+        </article>
+      </div>
+      <div class="draw-actions">
+        <button id="draw-round" class="button button-primary"><svg><use href="#i-dice"/></svg>Girar tudo</button>
+      </div>
+      <section class="round-results" aria-labelledby="results-title">
+        <div class="results-heading"><h2 id="results-title">Resultados <span id="results-progress">0 / 7</span></h2><div class="results-actions"><button class="text-button" id="copy-results" aria-label="Copiar resultados" disabled><svg><use href="#i-copy"/></svg>Copiar</button><button class="text-button danger-text" id="reset-cycle" disabled>Limpar resultados</button></div></div>
+        <ol id="round-results-list" class="round-results-list"></ol>
+        <p id="results-empty">Os resultados aparecem aqui.</p>
+      </section>
+    </main>
+  </div>
+  <dialog id="history-dialog" class="history-dialog" aria-labelledby="history-title">
+    <div class="dialog-heading"><h2 id="history-title">Histórico</h2><button class="icon-button" data-close="history-dialog" aria-label="Fechar histórico"><svg><use href="#i-close"/></svg></button></div>
+    <div id="history-view"><div class="history-toolbar"><span id="history-total"></span><div><button class="text-button" id="copy-history"><svg><use href="#i-copy"/></svg>Copiar</button><button class="text-button danger-text" id="clear-history">Limpar</button></div></div><div id="history-list"></div></div>
+  </dialog>
+  <dialog id="editor-dialog" class="editor-dialog" aria-labelledby="editor-title">
+    <div class="dialog-heading"><div><h2 id="editor-title">Editar listas</h2></div><button class="icon-button" data-close="editor-dialog" aria-label="Fechar edição"><svg><use href="#i-close"/></svg></button></div>
+    <div class="editor-tabs" role="tablist" aria-label="Listas para editar"><button data-tab="friends" role="tab" id="tab-friends" aria-controls="editor-panel">Nomes <span id="tab-count-friends"></span></button><button data-tab="cards" role="tab" id="tab-cards" aria-controls="editor-panel">Cartas <span id="tab-count-cards"></span></button><button data-tab="anime" role="tab" id="tab-anime" aria-controls="editor-panel">Animes <span id="tab-count-anime"></span></button></div>
+    <div id="editor-panel" role="tabpanel" aria-labelledby="tab-friends">
+      <p class="editor-description" id="editor-description"></p>
+      <form id="entry-form">
+        <div class="form-fields">
+          <label class="form-label"><span id="entry-name-label">Nome do amigo</span><input id="entry-name" name="name" maxlength="80" autocomplete="off" required placeholder="Ex.: Hex"></label>
+          <label class="form-label" id="profile-field" hidden>Perfil do AniList (opcional)<input id="entry-profile" name="anilist-profile" maxlength="200" autocomplete="off" placeholder="https://anilist.co/user/usuario/"></label>
+          <label class="form-label" id="owner-field" hidden>Indicado por<select id="entry-owner"><option value="">Sem indicação</option></select></label>
+          <label class="form-label" id="description-field" hidden>Efeito ou penalidade<textarea id="entry-description" maxlength="300" rows="2" placeholder="O que acontece quando esta carta sair?"></textarea></label>
+        </div>
+        <div id="anime-search-tools" class="anime-search-tools" hidden><button type="button" id="search-anime" class="button button-quiet"><svg><use href="#i-search"/></svg>Buscar no MAL</button><span id="anime-search-status" class="search-status" role="status"></span></div>
+        <ul id="anime-search-results" class="anime-search-results" aria-label="Animes encontrados" hidden></ul>
+        <div id="anime-selection" class="anime-selection" hidden></div>
+        <p id="catalog-source" class="catalog-source" hidden>Dados do <a href="https://myanimelist.net/" target="_blank" rel="noopener noreferrer">MyAnimeList</a> via <a href="https://tenrai.org/" target="_blank" rel="noopener noreferrer">Tenrai</a>, compatível com Jikan. Você também pode cadastrar manualmente.</p>
+        <div class="form-actions"><button class="button button-primary" type="submit" id="entry-submit"><svg><use href="#i-plus"/></svg> Adicionar</button><button class="text-button" id="cancel-edit" type="button" hidden>Cancelar edição</button></div>
+      </form>
+      <div class="editor-list-header"><span id="list-label"></span><span>EDITAR / REMOVER</span></div><div class="entry-list" id="entry-list"></div>
+    </div>
+    <div class="backup-actions"><div><button class="text-button" id="export-data"><svg><use href="#i-download"/></svg> Exportar dados</button><button class="text-button" id="import-data">Importar dados</button><input type="file" id="import-file" accept="application/json,.json" hidden></div></div><p class="local-note" id="storage-status">Salvo neste navegador</p>
+  </dialog>
+  <dialog id="confirm-dialog" class="confirm-dialog" aria-labelledby="confirm-title"><div class="dialog-heading"><h2 id="confirm-title"></h2><button class="icon-button" data-close="confirm-dialog" aria-label="Cancelar"><svg><use href="#i-close"/></svg></button></div><p id="confirm-description"></p><div class="confirm-actions"><button class="button button-quiet" data-close="confirm-dialog">Cancelar</button><button class="button button-primary" id="confirm-action">Confirmar</button></div></dialog>
+
+  <div id="toast" role="status" aria-live="polite"></div><div id="spin-announcer" class="sr-only" role="status" aria-live="polite"></div><div id="confetti" aria-hidden="true"></div>
+</body>
+</html>
