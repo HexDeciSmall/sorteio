@@ -63,14 +63,14 @@
           <div class="wheel-result" id="result-anime" aria-live="polite"><strong>—</strong></div>
           <div id="anime-details" class="anime-details" hidden>
             <div class="anime-info"><img id="anime-cover" class="anime-cover" src="poster-placeholder.svg" alt=""><div class="mal-meta"><a id="anime-mal-link" target="_blank" rel="noopener noreferrer" hidden>MyAnimeList ↗</a><span id="anime-mal-score"></span><small id="anime-owner"></small><button id="link-current-anime" class="text-button" hidden>Vincular no MAL</button></div></div>
-            <div id="personal-rating" class="personal-rating" role="status"></div><button id="retry-personal-rating" class="text-button" hidden>Tentar novamente</button>
-            <details id="group-ratings" class="group-ratings" hidden><summary>Notas dos colegas <span class="rating-source">AniList</span></summary><ul id="group-ratings-list"></ul><button id="retry-group-ratings" class="text-button" hidden>Tentar notas novamente</button></details>
+            <p id="anime-rating-hint" class="anime-rating-hint" hidden>Vincule o anime ao MAL para consultar as notas.</p>
           </div>
           <div id="anime-decision" class="anime-decision" hidden><button id="confirm-anime" class="button button-primary" disabled><svg><use href="#i-check"/></svg>Confirmar</button><button id="reject-anime" class="button button-quiet">Não, girar outro</button></div>
           <small id="anime-confirm-hint" class="anime-confirm-hint" hidden>Sorteie também o nome e a carta.</small>
           <button class="button button-spin" id="spin-anime" data-spin="anime" aria-label="Girar roleta de animes"><svg><use href="#i-refresh"/></svg>Girar</button>
         </article>
       </div>
+      <section id="group-ratings" class="group-ratings" aria-labelledby="group-ratings-title" hidden><div class="group-ratings-heading"><h2 id="group-ratings-title">Notas dos colegas <span class="rating-source">AniList</span></h2><button id="retry-group-ratings" class="text-button" hidden>Tentar notas novamente</button></div><ul id="group-ratings-list" aria-live="polite"></ul></section>
       <div class="draw-actions">
         <button id="draw-round" class="button button-primary"><svg><use href="#i-dice"/></svg>Girar tudo</button>
       </div>

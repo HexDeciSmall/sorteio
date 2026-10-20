@@ -10,7 +10,7 @@ Extraia todos os arquivos para a mesma pasta e abra `index.html` em um navegador
 
 1. Abra **Editar listas**, no ícone de edição do topo, ou **Editar** em uma das roletas.
 2. Na aba **Nomes**, adicione, edite ou remova os participantes. Se quiser consultar notas pessoais, informe também o link do perfil público de cada amigo no AniList; esse campo é opcional.
-3. Na aba **Cartas**, personalize os nomes e as descrições dos efeitos e das penalidades.
+3. Na aba **Cartas**, adicione os nomes e as descrições dos efeitos e das penalidades. Para jogar sem regra extra, você pode cadastrar uma carta chamada Sem efeito.
 4. Na aba **Animes**, busque um título no catálogo ou cadastre-o manualmente. Selecione o resultado desejado, escolha quem indicou e finalize em **Adicionar** ou **Salvar alteração**, ao editar. Cada amigo pode ter até **2 indicações**; também é possível cadastrar títulos sem indicação.
 5. Clique em **Girar tudo** para girar as três roletas na sequência. Também é possível usar os botões **Girar** de **Nomes**, **Cartas** e **Animes** individualmente.
 6. Confira o anime sorteado. Com as três escolhas completas, clique em **Confirmar**, abaixo da roleta de animes, para registrar a rodada em **Resultados**. Só então o nome e o anime saem das opções disponíveis do ciclo.
@@ -23,7 +23,7 @@ Recusar um anime não o consome. Se houver outra opção disponível, o título 
 
 Os Resultados mostram as atribuições do ciclo atual na ordem em que aconteceram, no formato **Nome — Anime (efeito da carta)**. Quando a carta não tiver descrição, aparece o nome dela entre parênteses. Use **Copiar**, na seção Resultados, para levar essa lista ao grupo.
 
-Os participantes iniciais são **Hex, KV, Cap, Nando, Turbo, Mary e Kris**. Os animes começam como exemplos sem indicação de participante, e as cartas também são exemplos editáveis. Substitua os títulos e as regras pelas escolhas do seu grupo.
+Os participantes iniciais são **Hex, KV, Cap, Nando, Turbo, Mary e Kris**. As listas de **Cartas e Animes começam vazias**. Cadastre pelo menos uma carta e um anime para completar um sorteio; depois adicione as indicações e as regras do seu grupo. A atualização também remove os conjuntos antigos de exemplos quando ainda estão intactos, preservando as personalizações.
 
 As cartas são regras combinadas entre vocês. O site sorteia e registra o texto da carta; trocas de anime, episódios extras e outras consequências são aplicados manualmente pelo grupo.
 
@@ -33,9 +33,9 @@ A busca de animes mostra **nome, capa e nota média do MyAnimeList (MAL)** quand
 
 A capa, o identificador do MAL e a nota média são guardados com o cadastro. A nota MAL representa o valor recebido na busca e não é atualizada automaticamente. Títulos manuais ou dados sem capa/nota exibem uma indicação de ausência, sem inventar valores.
 
-Para notas pessoais, edite cada participante em **Nomes** e informe seu perfil, por exemplo `https://anilist.co/user/SEU-USUARIO/`. Ao conferir um anime do catálogo, o site consulta a lista pública do amigo sorteado e mostra sua nota na escala **0 a 10**, junto do status informado no AniList, como Assistindo ou Concluído. A nota pessoal é diferente da média MAL.
+Para notas pessoais, edite cada participante em **Nomes** e informe seu perfil, por exemplo `https://anilist.co/user/SEU-USUARIO/`. Ao sortear um anime do catálogo, a seção **Notas dos colegas**, abaixo das roletas, aparece automaticamente com **todos os nomes cadastrados**. Ela consulta a lista pública de cada colega com perfil vinculado e mostra sua nota na escala **0 a 10**, junto do status informado no AniList, como Assistindo ou Concluído. A consulta também funciona quando você gira apenas a roleta de animes, sem ter sorteado um nome. A nota pessoal é diferente da média MAL.
 
-Abra **Notas dos colegas** para consultar as listas dos outros participantes. Essa seção é opcional e só começa a carregar as consultas quando você a abre. As notas pessoais são consultadas online, com cache curto de até 5 minutos durante a sessão, e não são uma cópia permanente no backup.
+Colegas sem vínculo exibem **Sem perfil**. Você não precisa abrir uma seção nem selecionar um colega para carregar as notas; em caso de falha, use **Tentar notas novamente**. As notas pessoais são consultadas online, com cache curto de até 5 minutos durante a sessão, e não são uma cópia permanente no backup.
 
 **Sem nota**, **não consta na lista pública** e **perfil/lista indisponível ou privado** são situações diferentes. O site não trata ausência de informação como prova de que alguém não assistiu. Sem perfil cadastrado, sem vínculo do anime com o catálogo ou durante uma falha do serviço, você ainda pode confirmar ou recusar o sorteio normalmente.
 
@@ -87,7 +87,7 @@ O Tenrai substitui a API pública do Jikan, encerrada em **1º de outubro de 202
 - `index.html`: conteúdo e estrutura das telas.
 - `styles.css`: cores, layout e aparência das roletas.
 - `app.js`: interações, animações, edição e armazenamento no navegador.
-- `core.js`: sorteio, validação de backups e dados de exemplo.
+- `core.js`: sorteio, validação de backups e dados iniciais.
 - `catalog.js`: busca no catálogo MAL e consulta de notas públicas do AniList.
 - `poster-placeholder.svg`: imagem usada quando a capa do anime não está disponível.
 - `favicon.svg`: ícone da aba do navegador.

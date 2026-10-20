@@ -13,6 +13,14 @@
     'Fullmetal Alchemist: Brotherhood', 'Death Note', 'Haikyuu!!', 'Violet Evergarden',
     'Mob Psycho 100', 'Steins;Gate', 'Cowboy Bebop', 'Fruits Basket', 'Samurai Champloo', 'One Punch Man'
   ];
+  var CARD_DEFAULTS = [
+    ['Sem efeito', 'Assista ao anime sorteado normalmente.'],
+    ['Episódio extra', 'Assista a um episódio a mais do que o combinado pelo grupo.'],
+    ['Maratona', 'Combine com o grupo uma sessão com mais episódios.'],
+    ['Vale troca', 'Você pode pedir uma troca de anime ao grupo.'],
+    ['Modo crítico', 'Compartilhe com o grupo sua opinião sobre o anime da semana.'],
+    ['Sem spoilers', 'Comente suas impressões sem revelar acontecimentos da história.']
+  ];
   var own = function (value, key) { return Object.prototype.hasOwnProperty.call(value, key); };
   var fail = function (message) { throw new Error(message); };
 
@@ -33,19 +41,11 @@
     var friends = FRIEND_DEFAULTS.map(function (name) {
       return { id: uid(), name: name };
     });
-    var cardSeeds = [
-      ['Sem efeito', 'Assista ao anime sorteado normalmente.'],
-      ['Episódio extra', 'Assista a um episódio a mais do que o combinado pelo grupo.'],
-      ['Maratona', 'Combine com o grupo uma sessão com mais episódios.'],
-      ['Vale troca', 'Você pode pedir uma troca de anime ao grupo.'],
-      ['Modo crítico', 'Compartilhe com o grupo sua opinião sobre o anime da semana.'],
-      ['Sem spoilers', 'Comente suas impressões sem revelar acontecimentos da história.']
-    ];
     return {
       version: 1,
       friends: friends,
-      cards: cardSeeds.map(function (seed) { return { id: uid(), name: seed[0], description: seed[1] }; }),
-      anime: ANIME_DEFAULTS.map(function (name) { return { id: uid(), name: name, ownerId: null }; }),
+      cards: [],
+      anime: [],
       settings: { avoidFriends: true, avoidAnime: true, sound: true },
       used: { friends: [], anime: [] },
       current: { friend: null, card: null, anime: null },
@@ -62,16 +62,32 @@
         if (state.settings[key] === false) { state.settings[key] = true; changed = true; }
       });
     }
-    if (!Array.isArray(state.friends) || !Array.isArray(state.anime) || state.friends.length !== LEGACY_FRIENDS.length || state.anime.length !== ANIME_DEFAULTS.length) return changed;
-    if (!state.friends.every(function (friend, i) { return friend && friend.name === LEGACY_FRIENDS[i]; })) return changed;
-    if (state.friends.some(function (friend) { return own(friend, 'anilistUsername') && friend.anilistUsername !== null; })) return changed;
-    if (!state.anime.every(function (anime, i) { return anime && anime.name === ANIME_DEFAULTS[i] && anime.ownerId === state.friends[Math.floor(i / 2)].id; })) return changed;
-    state.friends = FRIEND_DEFAULTS.map(function (name) { return { id: uid(), name: name }; });
-    state.anime.forEach(function (anime) { anime.ownerId = null; });
-    state.used.friends = [];
-    state.current.friend = null;
-    if (state.current.anime) state.current.anime = Object.assign({}, state.current.anime, { ownerId: null });
-    return true;
+    if (!Array.isArray(state.friends) || !Array.isArray(state.cards) || !Array.isArray(state.anime)) return changed;
+    var hasProfiles = state.friends.some(function (friend) { return friend && friend.anilistUsername !== undefined && friend.anilistUsername !== null; });
+    var legacyNames = state.friends.length === LEGACY_FRIENDS.length && state.friends.every(function (friend, i) { return friend && friend.name === LEGACY_FRIENDS[i]; });
+    var animeNames = state.anime.length === ANIME_DEFAULTS.length && state.anime.every(function (anime, i) { return anime && anime.name === ANIME_DEFAULTS[i]; });
+    var hasMetadata = state.anime.some(function (anime) { return anime && ['malId', 'coverUrl', 'malScore', 'malUrl'].some(function (key) { return own(anime, key); }); });
+    var legacyOwners = legacyNames && animeNames && state.anime.every(function (anime, i) { return anime.ownerId === state.friends[Math.floor(i / 2)].id; });
+    if (legacyOwners && !hasProfiles && !hasMetadata) {
+      state.friends = FRIEND_DEFAULTS.map(function (name) { return { id: uid(), name: name }; });
+      state.used.friends = [];
+      state.current.friend = null;
+      changed = true;
+    }
+    if (animeNames && !hasMetadata && ((!hasProfiles && legacyOwners) || state.anime.every(function (anime) { return anime.ownerId === null; }))) {
+      var animeIds = new Set(state.anime.map(function (anime) { return anime.id; }));
+      state.anime = [];
+      state.used.anime = state.used.anime.filter(function (value) { return !animeIds.has(value); });
+      if (state.current.anime && animeIds.has(state.current.anime.id)) state.current.anime = null;
+      changed = true;
+    }
+    if (state.cards.length === CARD_DEFAULTS.length && state.cards.every(function (card, i) { return card && card.name === CARD_DEFAULTS[i][0] && card.description === CARD_DEFAULTS[i][1]; })) {
+      var cardIds = new Set(state.cards.map(function (card) { return card.id; }));
+      state.cards = [];
+      if (state.current.card && cardIds.has(state.current.card.id)) state.current.card = null;
+      changed = true;
+    }
+    return changed;
   }
 
   function object(value, label) {

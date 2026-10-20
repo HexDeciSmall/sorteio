@@ -101,23 +101,18 @@ svg use[href="#i-star"] { stroke: none; }
 .anime-info strong + .mal-meta { margin-top: 6px; }
 .mal-meta a { color: #c4afd9; text-decoration-color: #79658c; text-underline-offset: 3px; }
 .mal-meta a:hover { color: #e3c9f8; }
-.personal-rating { margin-top: 11px; color: #c9bad5; font-size: 12px; line-height: 1.65; overflow-wrap: anywhere; }
-.personal-rating > strong, .personal-rating > span, .personal-rating > small { display: block; }
-.personal-rating > strong { font-weight: 600; }
-.personal-rating > small { margin-top: 3px; color: #a69bae; font-size: 11px; }
-.personal-rating a { color: #bca2d1; text-underline-offset: 3px; }
+.anime-rating-hint { margin-top: 10px; color: #a69bae; font-size: 12px; line-height: 1.6; }
 .anime-details > .text-button { justify-content: flex-start; padding-left: 0; font-size: 12px; }
-.group-ratings { margin-top: 4px; min-width: 0; color: #bdabc9; font-size: 12px; line-height: 1.6; }
-.group-ratings > summary { min-height: 40px; padding: 10px 0; cursor: pointer; color: #c1acd0; font-size: 12px; line-height: 1.6; }
-.group-ratings > summary::marker { color: #9279a4; }
-.group-ratings > summary:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; border-radius: 3px; }
-.group-ratings[open] > summary { border-bottom: 1px solid #39303f; }
-.group-ratings ul { padding: 0; margin: 0; list-style: none; }
-.group-ratings li { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid #322a38; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
-.group-ratings li:last-child { border-bottom: 0; }
-.group-ratings li > span:first-child { flex: 1; min-width: 0; }
-.group-ratings li > span:last-child { max-width: 65%; color: #dfc690; text-align: right; }
-.search-status.is-error, .personal-rating.is-error, .anime-details .is-error { color: #e4a397; }
+.group-ratings { min-width: 0; padding: 16px 18px 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); font-size: 12px; line-height: 1.6; }
+.group-ratings-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.group-ratings-heading h2 { font-size: 15px; font-weight: 600; }
+.rating-source { margin-left: 7px; color: var(--muted); font-size: 11px; font-weight: 400; }
+.group-ratings ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; padding: 0; margin: 0; list-style: none; }
+.group-ratings li { min-width: 0; padding: 10px 12px; border: 1px solid #37313d; border-radius: 7px; background: #242128; overflow-wrap: anywhere; }
+.rating-friend { display: block; margin-bottom: 5px; color: #ded6e6; font-size: 13px; font-weight: 600; text-decoration: none; }
+a.rating-friend:hover { color: var(--orange); }
+.rating-value { display: block; color: #dfc690; font-size: 12px; }
+.search-status.is-error, .group-ratings .is-error .rating-value, .anime-details .is-error { color: #e4a397; }
 .draw-actions { display: flex; justify-content: center; align-items: center; gap: 10px; }
 .draw-actions > .button { min-width: 125px; min-height: 44px; }
 .draw-actions > #draw-round { min-width: 145px; }
@@ -307,6 +302,9 @@ select { appearance: auto; }
   .draw-actions > #draw-round { min-width: 136px; }
   .draw-actions .icon-button { margin-left: 0; }
   .round-results { max-width: 480px; margin: 0 auto; }
+  .group-ratings { width: 100%; max-width: 480px; margin: 0 auto; padding: 14px; }
+  .group-ratings ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .group-ratings-heading { flex-wrap: wrap; gap: 6px; }
   .results-heading { padding: 9px 15px; gap: 4px 12px; flex-wrap: wrap; }
   .results-actions { gap: 14px; margin-left: auto; }
   .round-result { padding: 13px 15px; gap: 10px; }

@@ -34,7 +34,6 @@
   let searchGeneration = 0;
   let ratingController;
   let ratingSignature = '';
-  let personalRating = null;
   let groupLoaded = false;
   const failedCovers = new Set();
   const degrees = { friends: 0, cards: 0, anime: 0 };
@@ -110,26 +109,16 @@
     if (result.kind === 'unrated') return 'Sem nota' + status;
     return result.message || (result.kind === 'not-listed' ? 'Não consta na lista pública.' : 'Consulta indisponível.');
   }
-  function renderPersonalRating() {
-    const friend = state.current.friend;
-    const box = $('#personal-rating');
-    $('#retry-personal-rating').hidden = !personalRating || personalRating.kind !== 'unavailable';
-    box.classList.toggle('is-error', !!personalRating && personalRating.kind === 'unavailable');
-    if (!state.current.anime || !state.current.anime.malId) { box.textContent = 'Vincule o anime ao MAL para consultar as notas.'; return; }
-    if (!friend) { box.textContent = 'Sorteie um nome para consultar a nota pessoal.'; return; }
-    if (!friend.anilistUsername) { box.textContent = 'Adicione o perfil do AniList de ' + friend.name + ' em Editar nomes.'; return; }
-    box.innerHTML = '<strong>Nota de ' + html(friend.name) + '</strong><span>' + html(ratingText(personalRating)) + '</span><small>AniList · <a href="https://anilist.co/user/' + encodeURIComponent(friend.anilistUsername) + '/" target="_blank" rel="noopener noreferrer">@' + html(friend.anilistUsername) + '</a></small>';
-  }
   function syncAnimeDetails() {
     const anime = state.current.anime;
-    const friend = state.current.friend;
-    const signature = anime ? JSON.stringify([anime.id, anime.malId, friend && friend.id, friend && friend.name, friend && friend.anilistUsername, state.friends.map((item) => [item.id, item.name, item.anilistUsername])]) : '';
+    const signature = anime ? JSON.stringify([anime.id, anime.malId, state.friends.map((item) => [item.id, item.name, item.anilistUsername])]) : '';
     $('#anime-details').hidden = !anime;
+    $('#group-ratings').hidden = !anime || !anime.malId || !state.friends.length;
     if (!anime) {
       if (ratingController) ratingController.abort();
-      ratingController = null; ratingSignature = ''; personalRating = null; groupLoaded = false;
-      $('#group-ratings').open = false;
+      ratingController = null; ratingSignature = ''; groupLoaded = false;
       $('#group-ratings-list').replaceChildren();
+      $('#group-ratings-list').setAttribute('aria-busy', 'false');
       $('#retry-group-ratings').hidden = true;
       return;
     }
@@ -147,54 +136,48 @@
     const owner = state.friends.find((item) => item.id === anime.ownerId);
     $('#anime-owner').textContent = owner ? 'Indicado por ' + owner.name : '';
     $('#anime-owner').hidden = !owner;
-    $('#group-ratings').hidden = !anime.malId || !state.friends.some((item) => item.anilistUsername);
-    if (signature === ratingSignature) { renderPersonalRating(); return; }
+    $('#anime-rating-hint').hidden = !!anime.malId;
+    if (signature === ratingSignature) return;
     if (ratingController) ratingController.abort();
     ratingController = new AbortController();
-    const controller = ratingController;
-    ratingSignature = signature; personalRating = null; groupLoaded = false;
-    $('#group-ratings').open = false;
+    ratingSignature = signature; groupLoaded = false;
     $('#group-ratings-list').replaceChildren();
+    $('#group-ratings-list').setAttribute('aria-busy', 'false');
     $('#retry-group-ratings').hidden = true;
-    renderPersonalRating();
-    if (anime.malId && friend && friend.anilistUsername) {
-      S.getFriendRating(friend.anilistUsername, anime.malId, { signal: controller.signal }).then((result) => {
-        if (controller.signal.aborted || signature !== ratingSignature) return;
-        personalRating = result; renderPersonalRating();
-      }).catch((error) => {
-        if (error.name === 'AbortError' || signature !== ratingSignature) return;
-        personalRating = { kind: 'unavailable', message: 'Não foi possível consultar o AniList agora.' };
-        renderPersonalRating();
-      });
-    }
+    if (anime.malId) loadGroupRatings();
   }
   async function loadGroupRatings() {
-    if (groupLoaded || !$('#group-ratings').open || !state.current.anime || !state.current.anime.malId) return;
+    if (groupLoaded || !state.current.anime || !state.current.anime.malId) return;
     groupLoaded = true;
     const anime = state.current.anime;
-    const friends = state.friends.filter((friend) => friend.anilistUsername);
+    const friends = state.friends.slice();
     const signature = ratingSignature;
     const controller = ratingController;
     $('#retry-group-ratings').hidden = true;
     let failed = false;
-    $('#group-ratings-list').innerHTML = friends.map((friend) => '<li data-rating-friend="' + friend.id + '"><span>' + html(friend.name) + '</span><span>Consultando…</span></li>').join('');
+    $('#group-ratings-list').innerHTML = friends.map((friend) => '<li data-rating-friend="' + friend.id + '">' + (friend.anilistUsername ? '<a class="rating-friend" href="https://anilist.co/user/' + encodeURIComponent(friend.anilistUsername) + '/" target="_blank" rel="noopener noreferrer" title="Perfil do AniList de ' + html(friend.name) + '">' + html(friend.name) + ' ↗</a>' : '<strong class="rating-friend">' + html(friend.name) + '</strong>') + '<span class="rating-value">' + (friend.anilistUsername ? 'Consultando…' : 'Sem perfil') + '</span></li>').join('');
+    $('#group-ratings-list').setAttribute('aria-busy', String(friends.some((friend) => friend.anilistUsername)));
     for (const friend of friends) {
       if (!controller || controller.signal.aborted || signature !== ratingSignature) return;
+      if (!friend.anilistUsername) continue;
       try {
-        const result = state.current.friend && state.current.friend.id === friend.id && personalRating && personalRating.kind !== 'unavailable' ? personalRating : await S.getFriendRating(friend.anilistUsername, anime.malId, { signal: controller.signal });
+        const result = await S.getFriendRating(friend.anilistUsername, anime.malId, { signal: controller.signal });
         if (controller.signal.aborted || signature !== ratingSignature) return;
         if (result.kind === 'unavailable') failed = true;
         const row = $('#group-ratings-list').querySelector('[data-rating-friend="' + friend.id + '"]');
-        if (row) row.lastElementChild.textContent = ratingText(result);
+        if (row) { row.lastElementChild.textContent = ratingText(result); row.classList.toggle('is-error', result.kind === 'unavailable'); }
       } catch (error) {
         if (error.name === 'AbortError') return;
         if (controller.signal.aborted || signature !== ratingSignature) return;
         failed = true;
         const row = $('#group-ratings-list').querySelector('[data-rating-friend="' + friend.id + '"]');
-        if (row) row.lastElementChild.textContent = 'Consulta indisponível.';
+        if (row) { row.lastElementChild.textContent = 'Consulta indisponível.'; row.classList.add('is-error'); }
       }
     }
-    if (signature === ratingSignature && !controller.signal.aborted) $('#retry-group-ratings').hidden = !failed;
+    if (signature === ratingSignature && controller && !controller.signal.aborted) {
+      $('#retry-group-ratings').hidden = !failed;
+      $('#group-ratings-list').setAttribute('aria-busy', 'false');
+    }
   }
   function toast(message, error = false) {
     clearTimeout(toastTimer);
@@ -628,8 +611,6 @@
     image.dataset.posterUrl = '';
     image.src = 'poster-placeholder.svg';
   }, true);
-  $('#retry-personal-rating').addEventListener('click', () => { ratingSignature = ''; syncAnimeDetails(); });
-  $('#group-ratings').addEventListener('toggle', loadGroupRatings);
   $('#retry-group-ratings').addEventListener('click', () => { groupLoaded = false; loadGroupRatings(); });
   $('#link-current-anime').addEventListener('click', () => {
     if (busy || !state.current.anime) return;
