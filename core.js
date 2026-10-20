@@ -70,7 +70,7 @@
       history: [],
       cycleRoundIds: [],
       cardDefaultsVersion: 1,
-      profileDefaultsVersion: 2,
+      profileDefaultsVersion: 3,
       turnEffect: emptyTurnEffect()
     };
   }
@@ -127,7 +127,14 @@
         turbo.anilistUsername = 'Turbomob';
         if (state.current.friend && state.current.friend.id === turbo.id) state.current.friend.anilistUsername = 'Turbomob';
       }
-      state.profileDefaultsVersion = 2;
+    }
+    if (profileVersion < 3) {
+      var mary = state.friends.find(function (friend) { return normalizedName(friend.name) === 'mary'; });
+      if (mary && !mary.anilistUsername) {
+        mary.anilistUsername = 'Katupiry';
+        if (state.current.friend && state.current.friend.id === mary.id) state.current.friend.anilistUsername = 'Katupiry';
+      }
+      state.profileDefaultsVersion = 3;
       changed = true;
     }
     if (changed) prepareTurnEffect(state);
@@ -138,6 +145,7 @@
     var friend = { id: uid(), name: name };
     if (name === 'Hex') friend.anilistUsername = 'HexDSmall';
     if (name === 'Turbo') friend.anilistUsername = 'Turbomob';
+    if (name === 'Mary') friend.anilistUsername = 'Katupiry';
     return friend;
   }
 
@@ -269,7 +277,7 @@
     state.cardDefaultsVersion = own(input, 'cardDefaultsVersion') ? input.cardDefaultsVersion : 0;
     if (state.cardDefaultsVersion !== 0 && state.cardDefaultsVersion !== 1) fail('Versão de cartas padrão inválida.');
     state.profileDefaultsVersion = own(input, 'profileDefaultsVersion') ? input.profileDefaultsVersion : 0;
-    if (![0, 1, 2].includes(state.profileDefaultsVersion)) fail('Versão de perfis padrão inválida.');
+    if (![0, 1, 2, 3].includes(state.profileDefaultsVersion)) fail('Versão de perfis padrão inválida.');
     var labels = { friends: 'Amigos', cards: 'Cartas', anime: 'Animes' };
     var ids = {};
     ['friends', 'cards', 'anime'].forEach(function (key) {

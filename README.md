@@ -9,7 +9,7 @@ Extraia todos os arquivos para a mesma pasta e abra `index.html` em um navegador
 ## Usar com o grupo
 
 1. Abra **Editar listas**, no ícone de edição do topo, ou **Editar** em uma das roletas.
-2. Na aba **Nomes**, adicione, edite ou remova os participantes. Se quiser consultar notas pessoais e jogar Guessr, informe também o link do perfil público de cada amigo no AniList. Hex já começa vinculado a [HexDSmall](https://anilist.co/user/HexDSmall/) e Turbo a [Turbomob](https://anilist.co/user/Turbomob/); os demais perfis devem ser informados pelo grupo. A atualização preenche o vínculo de Turbo nos dados já salvos uma única vez, quando ele estiver vazio, preservando os perfis personalizados.
+2. Na aba **Nomes**, adicione, edite ou remova os participantes. Se quiser consultar notas pessoais e jogar Guessr, informe também o link do perfil público de cada amigo no AniList. Hex já começa vinculado a [HexDSmall](https://anilist.co/user/HexDSmall/), Turbo a [Turbomob](https://anilist.co/user/Turbomob/) e Mary a [Katupiry](https://anilist.co/user/Katupiry/); os demais perfis devem ser informados pelo grupo. Cada novo vínculo padrão é preenchido nos dados já salvos uma única vez, quando estiver vazio, preservando os perfis personalizados.
 3. Na aba **Cartas**, edite os nomes, as descrições e o seletor **Efeito automático**. Use **Cartas padrão** para completar as cartas originais que faltarem, sem duplicar as que já estão cadastradas.
 4. Na aba **Animes**, busque um título no catálogo ou cadastre-o manualmente. Selecione o resultado desejado, escolha quem indicou e finalize em **Adicionar** ou **Salvar alteração**, ao editar. Cada amigo pode ter até **2 indicações**; também é possível cadastrar títulos sem indicação.
 5. Clique em **Girar tudo** para girar as três roletas na sequência. Se a carta pedir uma escolha, selecione a opção e use **Aplicar** ou **Não usar** antes do giro do anime. Também é possível usar os botões **Girar** de **Nomes**, **Cartas** e **Animes** individualmente.
@@ -78,7 +78,7 @@ Você tem **3 tentativas por rodada**. Acertar na primeira vale **3 pontos**, na
 
 Para uma rodada valer pontos, é necessário ter **pelo menos 2 colegas com perfis aptos**: cada perfil precisa estar público, acessível e ter ao menos **3 animes avaliados**. Cadastrar um link, sozinho, não garante que ele tenha dados suficientes para jogar.
 
-Hex e Turbo já vêm com seus perfis configurados. Quando os dois estiverem aptos, as rodadas valem pontos. Se apenas um perfil puder ser usado, o site oferece uma **Prévia jogável, sem pontuação**, usando três avaliações reais dele. Para incluir os demais colegas, abra **Editar listas → Nomes** e adicione seus links públicos corretos do AniList. Os perfis de KV, Cap, Nando, Mary e Kris não são inventados nem preenchidos automaticamente.
+Hex, Turbo e Mary já vêm com seus perfis configurados. Quando pelo menos dois estiverem aptos, as rodadas valem pontos. Se apenas um perfil puder ser usado, o site oferece uma **Prévia jogável, sem pontuação**, usando três avaliações reais dele. Para incluir os demais colegas, abra **Editar listas → Nomes** e adicione seus links públicos corretos do AniList. Os perfis de KV, Cap, Nando e Kris não são inventados nem preenchidos automaticamente.
 
 O Guessr consulta apenas informações públicas. Entradas privadas, sem nota ou marcadas como conteúdo adulto não são usadas nas pistas; não há notas ou pistas inventadas. As capas vêm do AniList quando disponíveis. Perfis sem avaliações públicas suficientes não entram como origem de uma rodada.
 
