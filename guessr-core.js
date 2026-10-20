@@ -132,10 +132,10 @@
     return 'g_' + Date.now().toString(36) + '_' + Array.from(bytes, function (value) { return value.toString(16).padStart(2, '0'); }).join('');
   }
 
-  function shuffled(value) {
+  function shuffled(value, randomIndex) {
     var result = value.slice();
     for (var i = result.length - 1; i > 0; i--) {
-      var j = secureIndex(i + 1);
+      var j = randomIndex(i + 1);
       var item = result[i]; result[i] = result[j]; result[j] = item;
     }
     return result;
@@ -176,7 +176,7 @@
     return uncovered.size ? null : selected;
   }
 
-  function candidateFor(target, profiles, recent) {
+  function candidateFor(target, profiles, recent, randomIndex) {
     var tried = new Set();
     var fallback = null;
     var entries = target.entries;
@@ -187,7 +187,7 @@
         var chosen = new Set();
         var pool = entries.map(function (_, i) { return i; });
         for (var slot = 0; slot < 3; slot++) {
-          var pick = secureIndex(pool.length);
+          var pick = randomIndex(pool.length);
           chosen.add(pool[pick]);
           pool.splice(pick, 1);
         }
@@ -283,8 +283,15 @@
     Object.assign(game, next);
   }
 
-  function createRound(game, profiles, friends) {
+  function createRound(game, profiles, friends, settings) {
     var next = normalizeGame(game);
+    settings = settings || {};
+    var indexSource = typeof settings.randomIndex === 'function' ? settings.randomIndex : secureIndex;
+    var randomIndex = function (length) {
+      var result = indexSource(length);
+      if (!Number.isSafeInteger(result) || result < 0 || result >= length) fail('O sorteio do Guessr retornou uma posição inválida.');
+      return result;
+    };
     if (next.round && !next.round.finished) fail('Termine a rodada atual ou reinicie o Guessr antes de começar outra.');
     var options = optionsList(friends);
     var optionIds = new Set(options.map(function (option) { return option.id; }));
@@ -292,12 +299,12 @@
     if (!eligible.length) fail('Vincule um perfil com pelo menos três animes avaliados para abrir a prévia do Guessr.');
     eligible.forEach(function (profile) { profile.index = new Map(profile.entries.map(function (entry) { return [entry.mediaId, entry]; })); });
     var preferred = eligible.filter(function (profile) { return eligible.length === 1 || profile.friendId !== next.lastTargetId; });
-    var groups = [shuffled(preferred), shuffled(eligible.filter(function (profile) { return profile.friendId === next.lastTargetId && eligible.length > 1; }))];
+    var groups = [shuffled(preferred, randomIndex), shuffled(eligible.filter(function (profile) { return profile.friendId === next.lastTargetId && eligible.length > 1; }), randomIndex)];
     var candidate = null;
     for (var groupIndex = 0; groupIndex < groups.length && !candidate; groupIndex++) {
       var fallback = null;
       for (var i = 0; i < groups[groupIndex].length; i++) {
-        var found = candidateFor(groups[groupIndex][i], eligible, next.recent);
+        var found = candidateFor(groups[groupIndex][i], eligible, next.recent, randomIndex);
         if (found && !next.recent.includes(found.key)) { candidate = found; break; }
         if (found && !fallback) fallback = found;
       }
@@ -305,7 +312,7 @@
     }
     if (!candidate) fail('As listas têm avaliações iguais nas pistas disponíveis. Atualize as listas ou vincule outro perfil para criar uma rodada sem ambiguidade.');
     var target = options.find(function (option) { return option.id === candidate.target.friendId; });
-    next.round = { id: uid(), targetId: target.id, targetName: target.name, username: candidate.target.username, clues: candidate.clues.map(function (clue) { return Object.assign({}, clue); }), options: options, guessedIds: [], finished: false, correct: false, points: 0, preview: eligible.length === 1 };
+    next.round = { id: settings.roundId === undefined ? uid() : id(settings.roundId, 'Rodada'), targetId: target.id, targetName: target.name, username: candidate.target.username, clues: candidate.clues.map(function (clue) { return Object.assign({}, clue); }), options: options, guessedIds: [], finished: false, correct: false, points: 0, preview: eligible.length === 1 };
     next.lastTargetId = target.id;
     next.recent.push(candidate.key);
     if (next.recent.length > MAX_RECENT) next.recent.splice(0, next.recent.length - MAX_RECENT);

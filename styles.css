@@ -185,6 +185,53 @@ a.rating-friend:hover { color: var(--orange); }
 .guessr-reveal { display: inline-block; margin-top: 15px; color: #b69bc9; font-size: 12px; line-height: 1.5; text-underline-offset: 3px; }
 .guessr-actions { display: flex; justify-content: center; margin-top: 20px; }
 .guessr-actions > .button { min-width: 160px; }
+.guessr-game-nav { display: inline-flex; flex-wrap: wrap; gap: 3px; margin-top: 20px; padding: 4px; border: 1px solid #3b3342; border-radius: 8px; background: #1b181f; }
+.guessr-game-nav > button { min-height: 40px; padding: 9px 17px; border: 1px solid transparent; border-radius: 5px; background: transparent; color: #ada1b7; font-size: 13px; font-weight: 500; line-height: 1.4; transition: background .18s, color .18s, border-color .18s; }
+.guessr-game-nav > button:hover:not(:disabled) { background: #2b2333; color: #e2d2ed; }
+.guessr-game-nav > button[aria-pressed="true"] { border-color: #5c456e; background: #392b44; color: #ecdcf7; }
+.guessr-game-nav > button:disabled { opacity: .45; }
+.daily-panel { margin-top: 16px; padding: 14px 16px; border: 1px solid #3a3242; border-radius: 9px; background: #1e1a23; }
+.daily-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 18px; }
+.daily-date-controls { display: flex; align-items: center; gap: 10px; min-width: 0; }
+#daily-calendar-open { max-width: 270px; min-height: 42px; padding: 10px 12px; border-color: #4b3e57; background: #2a222f; font-size: 13px; font-weight: 500; }
+#daily-calendar-open:hover:not(:disabled) { border-color: #8b6ca3; background: #35293f; }
+#daily-date-label { min-width: 0; overflow-wrap: anywhere; }
+#daily-today { flex: 0 0 auto; }
+.daily-streaks { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 18px; color: #aa9bb7; font-size: 12px; line-height: 1.5; }
+.daily-streaks strong { color: #e1cee9; font-size: 13px; font-weight: 600; }
+.daily-progress { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+.daily-progress > li { display: flex; }
+.daily-round-dot { display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 1px solid #4d3d59; border-radius: 7px; background: #28202f; color: #b6a2c5; font-size: 13px; font-weight: 500; line-height: 1; transition: background .18s, border-color .18s, color .18s; }
+.daily-round-dot:hover:not(:disabled) { border-color: #a283b9; background: #392a45; color: #e9d7f5; }
+.daily-round-dot.is-complete { border-color: #54745e; background: #26372b; color: #b4d8bf; }
+.daily-round-dot.is-review { border-color: #8a6ba1; color: #dfc4f1; }
+.daily-round-dot.is-current { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange); color: #f4c0aa; }
+.daily-round-dot:disabled { cursor: default; }
+.daily-summary { margin-top: 12px; color: #c8b6d4; font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; }
+.daily-summary.is-complete { color: #b5d5bf; }
+.daily-summary.is-error { color: #e4a397; }
+.daily-calendar-dialog { width: min(440px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 22px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #54425f #1c1b21; }
+.daily-calendar-dialog .dialog-heading h2 { font-size: 21px; }
+.daily-month-nav { display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px; align-items: center; gap: 10px; margin: 18px 0 12px; }
+#daily-calendar-month { color: #e0d2ea; font-size: 15px; font-weight: 500; text-align: center; line-height: 1.5; overflow-wrap: anywhere; }
+#daily-month-prev svg { transform: rotate(180deg); }
+.daily-weekdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; margin-bottom: 7px; }
+.daily-weekdays > abbr { padding: 5px 0; color: #a897b5; font-size: 11px; font-weight: 500; line-height: 1.5; text-align: center; text-decoration: none; }
+.daily-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+.daily-day, .daily-calendar-pad { position: relative; width: 100%; min-height: 40px; aspect-ratio: 1; }
+.daily-day { display: inline-grid; place-items: center; padding: 0; border: 1px solid transparent; border-radius: 6px; background: #29212f; color: #d9c8e5; font-size: 13px; line-height: 1; transition: background .18s, border-color .18s, color .18s; }
+.daily-day:hover:not(:disabled) { border-color: #a083b3; background: #3b2b47; color: #efddfa; }
+.daily-day.is-complete { border-color: #54745e; background: #27382d; color: #b6d9c0; }
+.daily-day.is-progress { border-color: #806d49; background: #3b3224; color: #e0c48c; }
+.daily-day.is-selected { border-color: var(--violet); box-shadow: 0 0 0 1px var(--violet); }
+.daily-day.is-today::after { content: ""; position: absolute; left: 50%; bottom: 5px; width: 3px; height: 3px; border-radius: 50%; background: var(--orange); transform: translateX(-50%); }
+.daily-day:disabled { background: transparent; border-color: transparent; color: #75677f; cursor: default; opacity: .55; }
+.daily-calendar-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; margin-top: 16px; padding-top: 9px; border-top: 1px solid #3b2e44; }
+.daily-calendar-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 9px 13px; }
+.daily-calendar-legend > span { display: inline-flex; align-items: center; gap: 5px; color: #ad9ab9; font-size: 11px; line-height: 1.5; }
+.daily-calendar-legend i { width: 6px; height: 6px; border-radius: 2px; }
+.daily-legend-complete { background: #81a78c; }
+.daily-legend-progress { background: #bea16b; }
 #results-progress { color: #aaa3b4; font-size: 12px; font-weight: 400; letter-spacing: 0; }
 .results-heading .text-button { flex: 0 0 auto; padding-right: 0; }
 .results-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 14px; }
@@ -356,6 +403,12 @@ select { appearance: auto; }
   .guessr-heading h1 { font-size: 22px; }
   .guessr-toolbar { flex-wrap: wrap; gap: 2px 14px; }
   .guessr-toolbar-actions { gap: 12px; margin-left: auto; }
+  .daily-header { align-items: flex-start; gap: 12px; }
+  .daily-date-controls { width: 100%; gap: 9px; }
+  #daily-calendar-open { flex: 1; max-width: none; justify-content: flex-start; }
+  .daily-streaks { gap: 8px 17px; }
+  .daily-panel { padding: 13px; }
+  .daily-calendar-dialog { padding: 18px; }
   .guessr-clues { gap: 10px; }
   .guessr-poster { height: 180px; }
   .guessr-clue-info { padding: 10px; }
@@ -436,6 +489,8 @@ select { appearance: auto; }
   .entry-info { flex-basis: 90px; }
   .entry-actions .icon-button { width: 40px; }
   .editor-tabs { gap: 17px; }
+  .guessr-game-nav { display: flex; width: 100%; }
+  .guessr-game-nav > button { flex: 1; padding-left: 12px; padding-right: 12px; }
   .history-toolbar { flex-direction: column; align-items: flex-start; gap: 1px; }
   .history-toolbar > div { width: 100%; justify-content: flex-end; }
 }

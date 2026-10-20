@@ -4,12 +4,14 @@ Um clube de anime com três roletas editáveis: **amigo → carta especial → a
 
 ## Testar no computador
 
-Extraia todos os arquivos para a mesma pasta e abra `index.html` em um navegador atualizado. Mantenha `styles.css`, `core.js`, `catalog.js`, `app.js`, `guessr-core.js`, `guessr.js`, `poster-placeholder.svg` e `favicon.svg` junto dele. Não é necessário instalar Node.js ou outras ferramentas. As roletas e a edição manual funcionam sem consultas externas; busca, capas remotas, notas pessoais e carregamento das pistas do Guessr precisam de internet.
+Extraia todos os arquivos para a mesma pasta e abra `index.html` em um navegador atualizado. Mantenha `styles.css`, `core.js`, `catalog.js`, `app.js`, `guessr-core.js`, `daily-core.js`, `daily-data.json`, `daily-cap.json`, `guessr.js`, `poster-placeholder.svg` e `favicon.svg` junto dele. Não é necessário instalar Node.js ou outras ferramentas. As roletas e a edição manual funcionam sem consultas externas; busca, capas remotas, notas pessoais e carregamento das pistas do Guessr Livre precisam de internet.
+
+Para usar o **Desafio diário**, abra o site no GitHub Pages ou em uma prévia local servida por HTTP: abrir `index.html` diretamente como `file://` pode bloquear a leitura de `daily-data.json` e `daily-cap.json`. As roletas e o modo Livre continuam disponíveis no arquivo local, com internet para as consultas do Livre.
 
 ## Usar com o grupo
 
 1. Abra **Editar listas**, no ícone de edição do topo, ou **Editar** em uma das roletas.
-2. Na aba **Nomes**, adicione, edite ou remova os participantes. Se quiser consultar notas pessoais e jogar Guessr, informe também o link do perfil público de cada amigo no AniList. Hex já começa vinculado a [HexDSmall](https://anilist.co/user/HexDSmall/), Turbo a [Turbomob](https://anilist.co/user/Turbomob/), Mary a [Katupiry](https://anilist.co/user/Katupiry/), Kris a [KrismonKalamity](https://anilist.co/user/KrismonKalamity/) e Kyoka a [Kycks](https://anilist.co/user/Kycks/); os demais perfis devem ser informados pelo grupo. Kyoka é adicionado uma única vez aos dados salvos, se ainda não estiver na lista e houver espaço. Cada novo vínculo padrão é preenchido nos dados já salvos uma única vez, quando estiver vazio, preservando os perfis personalizados.
+2. Na aba **Nomes**, adicione, edite ou remova os participantes. Se quiser consultar notas pessoais e jogar Guessr, informe também o link do perfil público de cada amigo no AniList. Hex já começa vinculado a [HexDSmall](https://anilist.co/user/HexDSmall/), Cap a [CapKiyo](https://anilist.co/user/CapKiyo/), Turbo a [Turbomob](https://anilist.co/user/Turbomob/), Mary a [Katupiry](https://anilist.co/user/Katupiry/), Kris a [KrismonKalamity](https://anilist.co/user/KrismonKalamity/) e Kyoka a [Kycks](https://anilist.co/user/Kycks/); faltam os perfis de KV e Nando. Kyoka é adicionado uma única vez aos dados salvos, se ainda não estiver na lista e houver espaço. Cada novo vínculo padrão é preenchido nos dados já salvos uma única vez, quando estiver vazio, preservando os perfis personalizados.
 3. Na aba **Cartas**, edite os nomes, as descrições e o seletor **Efeito automático**. Use **Cartas padrão** para completar as cartas originais que faltarem, sem duplicar as que já estão cadastradas.
 4. Na aba **Animes**, busque um título no catálogo ou cadastre-o manualmente. Selecione o resultado desejado, escolha quem indicou e finalize em **Adicionar** ou **Salvar alteração**, ao editar. Cada amigo pode ter até **2 indicações**; também é possível cadastrar títulos sem indicação.
 5. Clique em **Girar tudo** para girar as três roletas na sequência. Se a carta pedir uma escolha, selecione a opção e use **Aplicar** ou **Não usar** antes do giro do anime. Também é possível usar os botões **Girar** de **Nomes**, **Cartas** e **Animes** individualmente.
@@ -76,21 +78,37 @@ A aba **Guessr** é um jogo para descobrir de qual colega são as avaliações d
 
 Você tem **3 tentativas por rodada**. Acertar na primeira vale **3 pontos**, na segunda **2 pontos** e na terceira **1 ponto**. Um palpite errado não pode ser repetido na mesma rodada.
 
+Escolha entre **Livre**, com novas rodadas a partir dos perfis vinculados, e **Desafio diário**, com cinco rodadas fixas para cada data.
+
+### Livre
+
 Para uma rodada valer pontos, é necessário ter **pelo menos 2 colegas com perfis aptos**: cada perfil precisa estar público, acessível e ter ao menos **3 animes avaliados**. Cadastrar um link, sozinho, não garante que ele tenha dados suficientes para jogar.
 
-Hex, Turbo, Mary, Kris e Kyoka já vêm com seus perfis configurados. Quando pelo menos dois estiverem aptos, as rodadas valem pontos. Se apenas um perfil puder ser usado, o site oferece uma **Prévia jogável, sem pontuação**, usando três avaliações reais dele. Para incluir os demais colegas, abra **Editar listas → Nomes** e adicione seus links públicos corretos do AniList. Os perfis de KV, Cap e Nando não são inventados nem preenchidos automaticamente.
+Hex, Cap, Turbo, Mary, Kris e Kyoka já vêm com seus perfis configurados. Cap usa [CapKiyo](https://anilist.co/user/CapKiyo/) tanto nas notas pessoais das roletas quanto no Livre. Quando pelo menos dois estiverem aptos, as rodadas valem pontos. Se apenas um perfil puder ser usado, o site oferece uma **Prévia jogável, sem pontuação**, usando três avaliações reais dele. Para incluir KV e Nando, abra **Editar listas → Nomes** e adicione seus links públicos corretos do AniList; esses dois perfis não são inventados nem preenchidos automaticamente.
 
 O Guessr consulta apenas informações públicas. Entradas privadas, sem nota ou marcadas como conteúdo adulto não são usadas nas pistas; não há notas ou pistas inventadas. As capas vêm do AniList quando disponíveis. Perfis sem avaliações públicas suficientes não entram como origem de uma rodada.
 
 As listas consultadas ficam em cache temporário na memória da sessão por **5 minutos**, limitado a **20 perfis**, para evitar consultas repetidas. Mudanças no AniList podem levar esse intervalo para aparecer. Não é necessário entrar no AniList pelo site nem fornecer senha ou chave de API.
 
-O jogo e o placar são **locais ao navegador**. Os dados necessários para continuar a rodada, as tentativas e as estatísticas do Guessr são salvos na chave local `sorteio.guessr.v1`, separada dos dados das roletas; as listas completas consultadas não são gravadas nesse salvamento. Não há banco de dados online, partida compartilhada nem sincronização de pontuação entre os colegas. Jogar Guessr não consome os nomes ou animes das roletas.
+O jogo e o placar do Livre são **locais ao navegador**. Os dados necessários para continuar a rodada, as tentativas e as estatísticas são salvos na chave local `sorteio.guessr.v1`, separada dos dados das roletas; as listas completas consultadas não são gravadas nesse salvamento. Não há banco de dados online, partida compartilhada nem sincronização de pontuação entre os colegas. Jogar Guessr não consome os nomes ou animes das roletas.
+
+### Desafio diário
+
+Cada data tem **5 rodadas fixas**, iguais para todos os navegadores que usam esta versão do site. Cada rodada oferece três tentativas e vale 3, 2 ou 1 ponto conforme o acerto: o máximo por dia é **15 pontos**. Termine as cinco rodadas para concluir o desafio; **concluir também conta para a sequência de participação quando houver erros**.
+
+O calendário começa em **20/10/2026** e permite escolher datas até hoje, sempre pelo fuso **America/Sao_Paulo**. Não há desafios futuros. Você pode recuperar dias anteriores para fechar lacunas na sequência. A sequência atual conta dias concluídos consecutivos e permanece ativa quando o último dia concluído é hoje ou ontem. Um desafio concluído não pode ser reiniciado nem jogado novamente; as cinco rodadas continuam disponíveis para revisão.
+
+As pistas vêm de bases públicas fixas. A edição de **20/10/2026**, identificada por `2026-10-20-v1`, mantém os cinco perfis originais de Hex, Turbo, Mary, Kris e Kyoka em `daily-data.json`. A partir de **21/10/2026**, a edição `2026-10-21-cap-v1` acrescenta o perfil real de **Cap — CapKiyo**, guardado em `daily-cap.json`, e passa a usar seis perfis. O desafio de 20/10 continua exatamente o mesmo.
+
+O registro de edições em `guessr.js` escolhe a base pela data do desafio. **Mantenha os dois arquivos de dados e seus identificadores inalterados**; futuras edições precisam preservar as bases anteriores para não mudar desafios já disponíveis. As pistas do Diário não atualizam ao vivo nem dependem das listas locais. O Livre continua consultando os perfis atuais normalmente.
+
+O progresso, a pontuação diária e a sequência ficam somente neste navegador, na chave `sorteio.guessr.daily.v1`. Os dias já salvos são preservados ao mudar de edição, incluindo conclusões e sequência. Não entram na exportação JSON das roletas e não são sincronizados online. Os arquivos `daily-core.js`, `daily-data.json` e `daily-cap.json` são obrigatórios para o Diário.
 
 ## Dados, backup e compartilhamento
 
 As listas, configurações, ciclo e histórico são salvos automaticamente **somente no navegador e dispositivo usados**. O site não usa um banco de dados compartilhado, login ou sincronização entre amigos. Abrir o mesmo link em outro navegador começa com os dados iniciais. Limpar os dados do navegador pode apagar suas alterações.
 
-- **Exportar dados**, em Editar listas, baixa um arquivo JSON **somente das Roletas**: listas, perfis AniList vinculados, dados do catálogo salvos nos animes, configurações, estado e resultados do ciclo e histórico. O arquivo não inclui a rodada nem o placar do Guessr.
+- **Exportar dados**, em Editar listas, baixa um arquivo JSON **somente das Roletas**: listas, perfis AniList vinculados, dados do catálogo salvos nos animes, configurações, estado e resultados do ciclo e histórico. O arquivo não inclui o progresso nem o placar do Guessr Livre ou do Desafio diário.
 - **Importar dados** carrega um backup e substitui os dados atuais após confirmação. Exporte antes se quiser guardar a versão anterior.
 - **Copiar**, na seção Resultados abaixo das roletas, copia apenas as atribuições do ciclo atual, no mesmo formato exibido na lista.
 - **Copiar**, no Histórico, copia as rodadas guardadas de todos os ciclos.
@@ -127,7 +145,10 @@ O Tenrai substitui a API pública do Jikan, encerrada em **1º de outubro de 202
 - `core.js`: sorteio, validação de backups e dados iniciais.
 - `catalog.js`: busca no catálogo MAL e consulta de notas públicas do AniList.
 - `guessr-core.js`: seleção das pistas, tentativas, pontuação e validação do jogo salvo.
-- `guessr.js`: telas, consultas e armazenamento separado do Guessr.
+- `daily-core.js`: desafios por data, conclusão, calendário e sequência de participação do Diário.
+- `daily-data.json`: base pública fixa `2026-10-20-v1`; deve ser preservada para manter os desafios anteriores.
+- `daily-cap.json`: complemento fixo de CapKiyo, usado na edição `2026-10-21-cap-v1`; também deve ser preservado.
+- `guessr.js`: telas dos modos Livre e Diário, registro das edições por data, consultas e armazenamento separado do Guessr.
 - `poster-placeholder.svg`: imagem usada quando a capa do anime não está disponível.
 - `favicon.svg`: ícone da aba do navegador.
 
