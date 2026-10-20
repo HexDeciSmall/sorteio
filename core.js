@@ -57,7 +57,7 @@
 
   function createState() {
     var friends = FRIEND_DEFAULTS.map(function (name) {
-      return { id: uid(), name: name };
+      return defaultFriend(name);
     });
     return {
       version: 1,
@@ -70,6 +70,7 @@
       history: [],
       cycleRoundIds: [],
       cardDefaultsVersion: 1,
+      profileDefaultsVersion: 2,
       turnEffect: emptyTurnEffect()
     };
   }
@@ -89,7 +90,7 @@
     var hasMetadata = state.anime.some(function (anime) { return anime && ['malId', 'coverUrl', 'malScore', 'malUrl'].some(function (key) { return own(anime, key); }); });
     var legacyOwners = legacyNames && animeNames && state.anime.every(function (anime, i) { return anime.ownerId === state.friends[Math.floor(i / 2)].id; });
     if (legacyOwners && !hasProfiles && !hasMetadata) {
-      state.friends = FRIEND_DEFAULTS.map(function (name) { return { id: uid(), name: name }; });
+      state.friends = FRIEND_DEFAULTS.map(defaultFriend);
       state.used.friends = [];
       state.current.friend = null;
       changed = true;
@@ -112,8 +113,32 @@
       state.cardDefaultsVersion = 1;
       changed = true;
     }
+    var profileVersion = state.profileDefaultsVersion === undefined ? 0 : state.profileDefaultsVersion;
+    if (profileVersion < 1) {
+      var hex = state.friends.find(function (friend) { return normalizedName(friend.name) === 'hex'; });
+      if (hex && !hex.anilistUsername) {
+        hex.anilistUsername = 'HexDSmall';
+        if (state.current.friend && state.current.friend.id === hex.id) state.current.friend.anilistUsername = 'HexDSmall';
+      }
+    }
+    if (profileVersion < 2) {
+      var turbo = state.friends.find(function (friend) { return normalizedName(friend.name) === 'turbo'; });
+      if (turbo && !turbo.anilistUsername) {
+        turbo.anilistUsername = 'Turbomob';
+        if (state.current.friend && state.current.friend.id === turbo.id) state.current.friend.anilistUsername = 'Turbomob';
+      }
+      state.profileDefaultsVersion = 2;
+      changed = true;
+    }
     if (changed) prepareTurnEffect(state);
     return changed;
+  }
+
+  function defaultFriend(name) {
+    var friend = { id: uid(), name: name };
+    if (name === 'Hex') friend.anilistUsername = 'HexDSmall';
+    if (name === 'Turbo') friend.anilistUsername = 'Turbomob';
+    return friend;
   }
 
   function normalizedName(value) {
@@ -243,6 +268,8 @@
     var state = { version: 1 };
     state.cardDefaultsVersion = own(input, 'cardDefaultsVersion') ? input.cardDefaultsVersion : 0;
     if (state.cardDefaultsVersion !== 0 && state.cardDefaultsVersion !== 1) fail('Versão de cartas padrão inválida.');
+    state.profileDefaultsVersion = own(input, 'profileDefaultsVersion') ? input.profileDefaultsVersion : 0;
+    if (![0, 1, 2].includes(state.profileDefaultsVersion)) fail('Versão de perfis padrão inválida.');
     var labels = { friends: 'Amigos', cards: 'Cartas', anime: 'Animes' };
     var ids = {};
     ['friends', 'cards', 'anime'].forEach(function (key) {

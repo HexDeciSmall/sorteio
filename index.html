@@ -7,10 +7,12 @@
   <meta name="description" content="Roletas de nomes, cartas e animes para sortear entre amigos.">
   <title>Sorteio</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=cartas-20261020">
-  <script src="core.js?v=cartas-20261020" defer></script>
-  <script src="catalog.js?v=cartas-20261020" defer></script>
-  <script src="app.js?v=cartas-20261020" defer></script>
+  <link rel="stylesheet" href="styles.css?v=guessr-turbo-20261020">
+  <script src="core.js?v=guessr-turbo-20261020" defer></script>
+  <script src="catalog.js?v=guessr-turbo-20261020" defer></script>
+  <script src="guessr-core.js?v=guessr-turbo-20261020" defer></script>
+  <script src="app.js?v=guessr-turbo-20261020" defer></script>
+  <script src="guessr.js?v=guessr-turbo-20261020" defer></script>
 </head>
 <body>
   <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -37,6 +39,7 @@
   <div class="app-shell">
     <header class="topbar">
       <a class="brand" href="#" aria-label="Sorteio, início">Sorteio<span class="brand-dot"></span></a>
+      <nav class="site-nav" aria-label="Seções"><button data-section="draw" aria-pressed="true" aria-controls="draw-view">Roletas</button><button data-section="guessr" aria-pressed="false" aria-controls="guessr-view">Guessr</button></nav>
       <div class="top-actions">
         <button class="icon-button" id="sound-toggle" aria-label="Desativar som" title="Desativar som" aria-pressed="true"><svg><use href="#i-volume"/></svg></button>
         <button class="icon-button history-trigger" data-view="history" aria-label="Histórico" title="Histórico"><svg><use href="#i-clock"/></svg><span id="history-nav-count" class="nav-count" hidden>0</span></button>
@@ -80,6 +83,14 @@
         <ol id="round-results-list" class="round-results-list"></ol>
         <p id="results-empty">Os resultados aparecem aqui.</p>
       </section>
+    </main>
+    <main id="guessr-view" aria-labelledby="guessr-title" hidden>
+      <div class="guessr-heading"><div><div class="guessr-title-line"><h1 id="guessr-title">De quem são essas notas?</h1><span id="guessr-mode" class="guessr-mode" hidden>Prévia</span></div><p id="guessr-intro">Três animes. Três tentativas.</p></div><button id="guessr-profiles" class="text-button"><svg><use href="#i-user"/></svg>Perfis</button></div>
+      <div class="guessr-toolbar"><div class="guessr-stats"><span><strong id="guessr-score">0</strong> pontos</span><span><strong id="guessr-wins">0 / 0</strong> acertos</span></div><div class="guessr-toolbar-actions"><span id="guessr-attempts">3 tentativas</span><button id="guessr-clear-score" class="text-button">Zerar placar</button></div></div>
+      <p id="guessr-notice" class="guessr-notice" role="status" hidden></p>
+      <div id="guessr-clues" class="guessr-clues" aria-label="Três pistas de anime"></div>
+      <div class="guessr-answer-area"><p id="guessr-feedback" class="guessr-feedback" role="status">Carregue as pistas para começar.</p><div id="guessr-options" class="guessr-options" aria-label="Escolha o colega"></div><a id="guessr-reveal" class="guessr-reveal" target="_blank" rel="noopener noreferrer" hidden></a></div>
+      <div class="guessr-actions"><button id="guessr-next" class="button button-primary"><svg><use href="#i-dice"/></svg>Carregar pistas</button></div>
     </main>
   </div>
   <dialog id="history-dialog" class="history-dialog" aria-labelledby="history-title">

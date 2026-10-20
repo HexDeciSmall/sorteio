@@ -36,6 +36,11 @@ svg use[href="#i-star"] { stroke: none; }
 .topbar { height: 80px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2b2b30; }
 .brand { display: inline-flex; align-items: center; gap: 9px; color: #eae8ed; font-size: 24px; font-weight: 600; letter-spacing: -.7px; text-decoration: none; }
 .brand-dot { width: 5px; height: 5px; margin-top: 4px; background: var(--orange); border-radius: 50%; }
+.site-nav { display: flex; gap: 3px; padding: 4px; border: 1px solid #35313e; border-radius: 9px; background: #1c1b21; }
+.site-nav button { min-height: 35px; padding: 7px 19px; border: 0; border-radius: 5px; background: transparent; color: #aaa3b3; font-size: 12px; font-weight: 600; }
+.site-nav button[aria-pressed="true"] { background: #3a3048; color: #e5d4fc; }
+.site-nav button:hover:not(:disabled) { color: #f0e5fa; }
+.site-nav button:disabled { cursor: wait; opacity: .55; }
 .top-actions { display: flex; align-items: center; gap: 9px; }
 .icon-button { display: inline-grid; position: relative; place-items: center; flex: 0 0 auto; width: 40px; height: 40px; padding: 9px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--muted); transition: background .18s, color .18s, border-color .18s; }
 .icon-button svg { width: 19px; height: 19px; }
@@ -133,6 +138,51 @@ a.rating-friend:hover { color: var(--orange); }
 .round-results { width: 100%; min-width: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); }
 .results-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 18px; }
 .results-heading h2 { display: inline-flex; align-items: baseline; gap: 9px; min-width: 0; color: #e6e2eb; font-size: 16px; font-weight: 600; letter-spacing: -.2px; line-height: 1.5; }
+
+#guessr-view { width: 100%; max-width: 1040px; min-height: calc(100svh - 80px); padding: 28px 0 42px; margin: 0 auto; }
+.guessr-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.guessr-title-line { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.guessr-heading h1 { color: #eee8f4; font-size: clamp(21px, 2.3vw, 27px); font-weight: 600; letter-spacing: -.6px; line-height: 1.3; }
+.guessr-heading p { margin-top: 6px; color: #9e95a8; font-size: 13px; line-height: 1.5; }
+.guessr-mode { padding: 3px 8px; border: 1px solid #5a466c; border-radius: 4px; background: #30243d; color: #d5b4ec; font-size: 10px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; }
+.guessr-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 0; margin: 12px 0 17px; border-bottom: 1px solid #302b37; color: #aaa0b4; font-size: 12px; }
+.guessr-stats { display: flex; flex-wrap: wrap; gap: 20px; }
+.guessr-stats strong { margin-right: 3px; color: #e1d4ef; font-size: 17px; font-weight: 600; }
+.guessr-toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; }
+#guessr-attempts { color: #c3aecf; }
+.guessr-notice { margin-bottom: 18px; padding: 10px 13px; border: 1px solid #44384f; border-left: 3px solid #9b79b5; border-radius: 5px; background: #25202c; color: #bcb0c7; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.guessr-notice.is-error { color: #edb3a5; border-color: #6e4a43; background: #30221f; }
+.guessr-clues { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.guessr-clue { min-width: 0; overflow: hidden; border: 1px solid #3c3345; border-radius: 10px; background: #201c25; }
+.guessr-poster { position: relative; width: 100%; height: 270px; overflow: hidden; background: #17151c; }
+.guessr-poster img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
+.guessr-clue-number { position: absolute; top: 10px; left: 10px; padding: 4px 7px; border: 1px solid #ffffff30; border-radius: 5px; background: #15111bc9; color: #f3e9ff; font-size: 11px; font-weight: 600; }
+.guessr-clue-info { padding: 13px 14px 15px; }
+.guessr-clue-info h2 { display: -webkit-box; min-height: 42px; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical; color: #e5dcec; font-size: 14px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.guessr-clue-meta { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.guessr-clue-score { color: #e8c27e; font-size: 16px; font-weight: 600; }
+.guessr-status { padding: 3px 7px; border: 1px solid #4b3d57; border-radius: 4px; color: #ccb4da; font-size: 11px; line-height: 1.5; }
+.status-completed { background: #20332c; border-color: #385346; color: #a5cdb6; }
+.status-dropped { background: #392723; border-color: #65413b; color: #e0afa1; }
+.status-current, .status-repeating { background: #242d3b; border-color: #384c66; color: #aac5e8; }
+.status-paused { background: #373020; border-color: #5c4d30; color: #d7c18c; }
+.guessr-placeholder .guessr-poster { display: grid; place-items: center; background: radial-gradient(ellipse at 50% 35%, #30243e, #1b1822 70%); }
+.guessr-placeholder .guessr-poster > span { color: #5a476f; font-size: 68px; font-weight: 300; letter-spacing: -5px; }
+.guessr-placeholder strong { display: block; color: #807489; font-size: 14px; }
+.guessr-placeholder small { display: block; margin-top: 10px; color: #61566c; font-size: 12px; }
+.guessr-answer-area { margin-top: 22px; text-align: center; }
+.guessr-feedback { min-height: 22px; margin-bottom: 14px; color: #c8b7d6; font-size: 14px; font-weight: 500; line-height: 1.6; }
+.guessr-feedback.is-correct { color: #add1b7; }
+.guessr-feedback.is-wrong { color: #dda99c; }
+.guessr-options { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; }
+.guessr-option { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-width: 99px; min-height: 43px; padding: 9px 18px; border: 1px solid #52415f; border-radius: 7px; background: #2c2236; color: #d9c6e6; font-size: 13px; font-weight: 600; }
+.guessr-option:hover:not(:disabled) { border-color: #ad8ac8; background: #3d2d4d; }
+.guessr-option:disabled { cursor: default; opacity: .45; }
+.guessr-option.is-wrong { border-color: #68483e; background: #31221f; color: #b98a7c; opacity: .8; }
+.guessr-option.is-correct { border-color: #6d9a7d; background: #243d2e; color: #b9debf; opacity: 1; }
+.guessr-reveal { display: inline-block; margin-top: 15px; color: #b69bc9; font-size: 12px; line-height: 1.5; text-underline-offset: 3px; }
+.guessr-actions { display: flex; justify-content: center; margin-top: 20px; }
+.guessr-actions > .button { min-width: 160px; }
 #results-progress { color: #aaa3b4; font-size: 12px; font-weight: 400; letter-spacing: 0; }
 .results-heading .text-button { flex: 0 0 auto; padding-right: 0; }
 .results-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 14px; }
@@ -294,7 +344,23 @@ select { appearance: auto; }
 }
 @media (max-width: 760px) {
   .app-shell { padding: 0 20px; }
-  .topbar { height: 72px; }
+  .topbar { min-height: 72px; height: auto; padding: 14px 0; flex-wrap: wrap; gap: 10px; }
+  .site-nav { order: 2; flex-basis: 100%; }
+  .site-nav button { flex: 1; }
+  .top-actions { margin-left: auto; }
+  #guessr-view { padding-top: 24px; }
+  .guessr-heading { align-items: flex-start; gap: 8px; }
+  .guessr-heading h1 { font-size: 22px; }
+  .guessr-toolbar { flex-wrap: wrap; gap: 2px 14px; }
+  .guessr-toolbar-actions { gap: 12px; margin-left: auto; }
+  .guessr-clues { gap: 10px; }
+  .guessr-poster { height: 180px; }
+  .guessr-clue-info { padding: 10px; }
+  .guessr-clue-info h2 { min-height: 54px; font-size: 12px; }
+  .guessr-clue-score { font-size: 14px; }
+  .guessr-clue-meta { gap: 6px; }
+  .guessr-status { font-size: 10px; }
+  .guessr-option { min-width: 86px; padding: 9px 13px; }
   .brand { font-size: 23px; }
   .top-actions { gap: 5px; }
   #draw-view { min-height: calc(100svh - 72px); padding: 28px 0 35px; gap: 24px; }
@@ -369,6 +435,17 @@ select { appearance: auto; }
   .editor-tabs { gap: 17px; }
   .history-toolbar { flex-direction: column; align-items: flex-start; gap: 1px; }
   .history-toolbar > div { width: 100%; justify-content: flex-end; }
+}
+@media (max-width: 520px) {
+  .guessr-clues { grid-template-columns: 1fr; gap: 10px; }
+  .guessr-clue { display: grid; grid-template-columns: 90px minmax(0, 1fr); }
+  .guessr-poster { width: 90px; height: 132px; }
+  .guessr-clue-info { display: flex; flex-direction: column; justify-content: center; padding: 12px; }
+  .guessr-clue-info h2 { min-height: 0; font-size: 13px; }
+  .guessr-clue-meta { margin-top: 12px; }
+  .guessr-placeholder .guessr-poster > span { font-size: 36px; letter-spacing: -2px; }
+  .guessr-clue-number { top: 6px; left: 6px; padding: 2px 4px; font-size: 10px; }
+  .guessr-option { flex: 1 1 27%; min-width: 0; }
 }
 @media (min-width: 761px) and (max-height: 740px) {
   .wheel-stage { width: min(100%, 270px); }

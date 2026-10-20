@@ -14,6 +14,7 @@
   var searchCache = new Map();
   var ratingCache = new Map();
   var mediaCache = new Map();
+  var publicListCache = new Map();
   var queues = {
     jikan: { tail: Promise.resolve(), nextAt: 0, delay: 1100 },
     anilist: { tail: Promise.resolve(), nextAt: 0, delay: 2200 }
@@ -317,8 +318,79 @@
     }
   }
 
+  function publicListCover(value) {
+    if (typeof value !== 'string' || value.length > 2048 || /[\u0000-\u0020\u007f]/.test(value)) return null;
+    try {
+      var url = new URL(value);
+      if (url.protocol !== 'https:' || !['s4.anilist.co', 'cdn.myanimelist.net'].includes(url.hostname) || url.username || url.password || url.port) return null;
+      url.hash = '';
+      return url.href;
+    } catch (_) { return null; }
+  }
+
+  async function getPublicAnimeList(username, options) {
+    var signal = options && options.signal;
+    checkAbort(signal);
+    var name = typeof username === 'string' ? username.trim() : '';
+    if (!/^[a-zA-Z0-9_-]{1,60}$/.test(name)) throw serviceError('invalid', 'Informe um usuário válido do AniList, com até 60 letras, números, hífens ou sublinhados.');
+    var key = name.toLocaleLowerCase();
+    var cached = cacheGet(publicListCache, key);
+    if (cached) return cached;
+    var entries = new Map();
+    var query = 'query PublicAnimeList($username: String!, $chunk: Int!) { MediaListCollection(userName: $username, type: ANIME, chunk: $chunk, perChunk: 500) { hasNextChunk user { name } lists { entries { mediaId score(format: POINT_10_DECIMAL) status private media { id idMal isAdult title { romaji english } coverImage { large } } } } } }';
+    try {
+      for (var chunk = 1; chunk <= 20; chunk++) {
+        var payload = await graphql(query, { username: name, chunk: chunk }, signal);
+        var errors = gqlErrors(payload);
+        if (errors.length) {
+          if (isPrivate(errors)) throw serviceError('private', 'O perfil ou a lista de animes não está disponível publicamente.');
+          if (isNotFound(errors)) throw serviceError('not-found', 'Não foi possível encontrar essa lista pública no AniList.');
+          throw serviceError('response', 'O AniList não conseguiu carregar a lista completa. Tente novamente.');
+        }
+        var collection = payload.data && payload.data.MediaListCollection;
+        if (!collection || typeof collection !== 'object' || !Array.isArray(collection.lists) || typeof collection.hasNextChunk !== 'boolean') {
+          throw serviceError('response', 'O AniList enviou uma lista incompleta ou indisponível. Tente novamente.');
+        }
+        var canonical = collection.user && collection.user.name;
+        if (typeof canonical === 'string' && /^[a-zA-Z0-9_-]{1,60}$/.test(canonical)) name = canonical;
+        collection.lists.forEach(function (group) {
+          if (!group || !Array.isArray(group.entries)) throw serviceError('response', 'O AniList enviou uma lista incompleta. Tente novamente.');
+          group.entries.forEach(function (entry) {
+            if (!entry || typeof entry !== 'object' || entry.private !== false) return;
+            var media = entry.media;
+            if (!media || typeof media !== 'object' || media.isAdult !== false || !id(entry.mediaId) || !id(media.id) || entry.mediaId !== media.id || !Object.prototype.hasOwnProperty.call(labels, entry.status)) return;
+            var value = score(entry.score);
+            if (value === null) return;
+            value = Math.round((value + Number.EPSILON) * 10) / 10;
+            if (value <= 0) return;
+            var title = media.title;
+            var titleName = title && (text(title.english, 200) || text(title.romaji, 200));
+            if (!titleName || entries.has(media.id)) return;
+            entries.set(media.id, {
+              mediaId: media.id, malId: id(media.idMal), name: titleName,
+              coverUrl: publicListCover(media.coverImage && media.coverImage.large),
+              score: value, status: entry.status
+            });
+          });
+        });
+        if (!collection.hasNextChunk) {
+          checkAbort(signal);
+          var result = { username: name, entries: Array.from(entries.values()), profileUrl: 'https://anilist.co/user/' + encodeURIComponent(name) };
+          cacheSet(publicListCache, key, result, 5 * 60 * 1000, 20);
+          return copy(result);
+        }
+      }
+      throw serviceError('limit', 'Esta lista é grande demais para carregar por completo agora. Tente outro perfil.');
+    } catch (error) {
+      if (error.name === 'AbortError') throw error;
+      if (isPrivate(gqlErrors(error.data), error.status)) throw serviceError('private', 'O perfil ou a lista de animes não está disponível publicamente.');
+      if (isNotFound(gqlErrors(error.data), error.status)) throw serviceError('not-found', 'Não foi possível encontrar essa lista pública no AniList.');
+      throw error;
+    }
+  }
+
   return {
-    searchAnime: searchAnime, getFriendRating: getFriendRating, statusLabel: statusLabel,
+    searchAnime: searchAnime, getFriendRating: getFriendRating, getPublicAnimeList: getPublicAnimeList, statusLabel: statusLabel,
     catalogProvider: 'Tenrai (compatível com Jikan)', catalogUrl: 'https://tenrai.org/'
   };
 });

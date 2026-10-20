@@ -238,6 +238,7 @@
       }
     }
     $('#storage-status').textContent = storageAvailable ? 'Salvo neste navegador' : 'Sem salvamento local · exporte seus dados';
+    document.dispatchEvent(new Event('sorteio:state-changed'));
   }
   function displayDate(at, short = false) {
     return new Intl.DateTimeFormat('pt-BR', short ? { day: '2-digit', month: 'short' } : { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(at));
@@ -316,6 +317,7 @@
     main.innerHTML = icon(busy ? 'refresh' : 'dice') + (busy ? ' Girando…' : filled && !ready ? ' Completar' : ' Girar tudo');
     $$('[data-spin]').forEach((button) => button.disabled = busy || (ready && button.dataset.spin !== 'anime') || (effect.pending && button.dataset.spin === 'anime') || !C.available(state, button.dataset.spin).length);
     $$('[data-edit], [data-view], #manage-all, [data-delete-result]').forEach((button) => button.disabled = busy);
+    $$('[data-section]').forEach((button) => button.disabled = busy);
     $('#reset-cycle').disabled = busy || !(state.used.friends.length || state.used.anime.length || C.cycleRecords(state).length || filled);
     $('#anime-decision').hidden = !state.current.anime;
     $('#spin-anime').hidden = !!state.current.anime;
@@ -573,7 +575,7 @@
     try {
       if (file.size > 2 * 1024 * 1024) throw new Error('O arquivo deve ter no máximo 2 MB.');
       let imported;
-      try { imported = C.normalizeState(JSON.parse(await file.text())); }
+      try { imported = C.normalizeState(JSON.parse(await file.text())); C.migrateDefaults(imported); }
       catch (error) { throw new Error(error instanceof SyntaxError ? 'O arquivo não é um JSON válido.' : error.message); }
       confirmAction('Importar dados do clube?', 'Serão carregados ' + imported.friends.length + ' amigos, ' + imported.cards.length + ' cartas, ' + imported.anime.length + ' animes e ' + imported.history.length + ' resultados. Isso substitui os dados deste navegador. Exporte os atuais antes de continuar se quiser guardá-los.', () => {
         state = imported; persist(); renderAll(); resetEntryForm(); renderEditor(); toast('Dados importados.');
@@ -707,6 +709,12 @@
   }
   $('#copy-history').addEventListener('click', () => copyText('SORTEIO\n\n' + state.history.map(resultLine).join('\n')));
   $('#copy-results').addEventListener('click', () => copyText(C.cycleRecords(state).map(resultLine).join('\n')));
+  window.SorteioApp = Object.freeze({
+    getFriends: () => state.friends.map((friend) => ({ ...friend })),
+    openProfiles: () => openEditor('friends'),
+    isBusy: () => busy,
+    confirm: confirmAction
+  });
   renderAll();
   if (!loadError) persist();
   else {

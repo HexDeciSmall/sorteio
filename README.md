@@ -4,12 +4,12 @@ Um clube de anime com três roletas editáveis: **amigo → carta especial → a
 
 ## Testar no computador
 
-Extraia todos os arquivos para a mesma pasta e abra `index.html` em um navegador atualizado. Mantenha `styles.css`, `core.js`, `catalog.js`, `app.js`, `poster-placeholder.svg` e `favicon.svg` junto dele. Não é necessário instalar Node.js ou outras ferramentas. As roletas e a edição manual funcionam sem consultas externas; busca, capas remotas e notas pessoais precisam de internet.
+Extraia todos os arquivos para a mesma pasta e abra `index.html` em um navegador atualizado. Mantenha `styles.css`, `core.js`, `catalog.js`, `app.js`, `guessr-core.js`, `guessr.js`, `poster-placeholder.svg` e `favicon.svg` junto dele. Não é necessário instalar Node.js ou outras ferramentas. As roletas e a edição manual funcionam sem consultas externas; busca, capas remotas, notas pessoais e carregamento das pistas do Guessr precisam de internet.
 
 ## Usar com o grupo
 
 1. Abra **Editar listas**, no ícone de edição do topo, ou **Editar** em uma das roletas.
-2. Na aba **Nomes**, adicione, edite ou remova os participantes. Se quiser consultar notas pessoais, informe também o link do perfil público de cada amigo no AniList; esse campo é opcional.
+2. Na aba **Nomes**, adicione, edite ou remova os participantes. Se quiser consultar notas pessoais e jogar Guessr, informe também o link do perfil público de cada amigo no AniList. Hex já começa vinculado a [HexDSmall](https://anilist.co/user/HexDSmall/) e Turbo a [Turbomob](https://anilist.co/user/Turbomob/); os demais perfis devem ser informados pelo grupo. A atualização preenche o vínculo de Turbo nos dados já salvos uma única vez, quando ele estiver vazio, preservando os perfis personalizados.
 3. Na aba **Cartas**, edite os nomes, as descrições e o seletor **Efeito automático**. Use **Cartas padrão** para completar as cartas originais que faltarem, sem duplicar as que já estão cadastradas.
 4. Na aba **Animes**, busque um título no catálogo ou cadastre-o manualmente. Selecione o resultado desejado, escolha quem indicou e finalize em **Adicionar** ou **Salvar alteração**, ao editar. Cada amigo pode ter até **2 indicações**; também é possível cadastrar títulos sem indicação.
 5. Clique em **Girar tudo** para girar as três roletas na sequência. Se a carta pedir uma escolha, selecione a opção e use **Aplicar** ou **Não usar** antes do giro do anime. Também é possível usar os botões **Girar** de **Nomes**, **Cartas** e **Animes** individualmente.
@@ -66,11 +66,27 @@ Se a atribuição excluída adicionou títulos por Infernizar, essas adições t
 
 O botão de som no topo ativa ou desativa os efeitos sonoros.
 
+## Guessr
+
+A aba **Guessr** é um jogo para descobrir de qual colega são as avaliações de três animes. Cada rodada usa **3 pistas reais**, com anime, nota e status vindos da lista pública do AniList. Escolha um dos nomes do grupo como palpite. O nome e o link do perfil de origem são revelados ao terminar a rodada, para conferir os dados.
+
+Você tem **3 tentativas por rodada**. Acertar na primeira vale **3 pontos**, na segunda **2 pontos** e na terceira **1 ponto**. Um palpite errado não pode ser repetido na mesma rodada.
+
+Para uma rodada valer pontos, é necessário ter **pelo menos 2 colegas com perfis aptos**: cada perfil precisa estar público, acessível e ter ao menos **3 animes avaliados**. Cadastrar um link, sozinho, não garante que ele tenha dados suficientes para jogar.
+
+Hex e Turbo já vêm com seus perfis configurados. Quando os dois estiverem aptos, as rodadas valem pontos. Se apenas um perfil puder ser usado, o site oferece uma **Prévia jogável, sem pontuação**, usando três avaliações reais dele. Para incluir os demais colegas, abra **Editar listas → Nomes** e adicione seus links públicos corretos do AniList. Os perfis de KV, Cap, Nando, Mary e Kris não são inventados nem preenchidos automaticamente.
+
+O Guessr consulta apenas informações públicas. Entradas privadas, sem nota ou marcadas como conteúdo adulto não são usadas nas pistas; não há notas ou pistas inventadas. As capas vêm do AniList quando disponíveis. Perfis sem avaliações públicas suficientes não entram como origem de uma rodada.
+
+As listas consultadas ficam em cache temporário na memória da sessão por **5 minutos**, limitado a **20 perfis**, para evitar consultas repetidas. Mudanças no AniList podem levar esse intervalo para aparecer. Não é necessário entrar no AniList pelo site nem fornecer senha ou chave de API.
+
+O jogo e o placar são **locais ao navegador**. Os dados necessários para continuar a rodada, as tentativas e as estatísticas do Guessr são salvos na chave local `sorteio.guessr.v1`, separada dos dados das roletas; as listas completas consultadas não são gravadas nesse salvamento. Não há banco de dados online, partida compartilhada nem sincronização de pontuação entre os colegas. Jogar Guessr não consome os nomes ou animes das roletas.
+
 ## Dados, backup e compartilhamento
 
 As listas, configurações, ciclo e histórico são salvos automaticamente **somente no navegador e dispositivo usados**. O site não usa um banco de dados compartilhado, login ou sincronização entre amigos. Abrir o mesmo link em outro navegador começa com os dados iniciais. Limpar os dados do navegador pode apagar suas alterações.
 
-- **Exportar dados**, em Editar listas, baixa um arquivo JSON com listas, perfis AniList vinculados, dados do catálogo salvos nos animes, configurações, estado e resultados do ciclo e histórico.
+- **Exportar dados**, em Editar listas, baixa um arquivo JSON **somente das Roletas**: listas, perfis AniList vinculados, dados do catálogo salvos nos animes, configurações, estado e resultados do ciclo e histórico. O arquivo não inclui a rodada nem o placar do Guessr.
 - **Importar dados** carrega um backup e substitui os dados atuais após confirmação. Exporte antes se quiser guardar a versão anterior.
 - **Copiar**, na seção Resultados abaixo das roletas, copia apenas as atribuições do ciclo atual, no mesmo formato exibido na lista.
 - **Copiar**, no Histórico, copia as rodadas guardadas de todos os ciclos.
@@ -79,7 +95,7 @@ As listas, configurações, ciclo e histórico são salvos automaticamente **som
 
 Backups anteriores da versão 1 continuam compatíveis com a importação. Os Resultados do ciclo atual também são preservados ao fechar e reabrir o site no mesmo navegador.
 
-Para continuar em outro computador, envie o JSON exportado e importe-o lá. Dados salvos ao abrir o arquivo localmente não são transferidos automaticamente para a versão publicada: exporte e importe para fazer essa mudança.
+Para continuar as Roletas em outro computador, envie o JSON exportado e importe-o lá. Dados salvos ao abrir o arquivo localmente não são transferidos automaticamente para a versão publicada: exporte e importe para fazer essa mudança. O progresso do Guessr permanece no navegador onde foi jogado.
 
 ## Publicar no GitHub Pages
 
@@ -106,6 +122,8 @@ O Tenrai substitui a API pública do Jikan, encerrada em **1º de outubro de 202
 - `app.js`: interações, animações, edição e armazenamento no navegador.
 - `core.js`: sorteio, validação de backups e dados iniciais.
 - `catalog.js`: busca no catálogo MAL e consulta de notas públicas do AniList.
+- `guessr-core.js`: seleção das pistas, tentativas, pontuação e validação do jogo salvo.
+- `guessr.js`: telas, consultas e armazenamento separado do Guessr.
 - `poster-placeholder.svg`: imagem usada quando a capa do anime não está disponível.
 - `favicon.svg`: ícone da aba do navegador.
 
