@@ -138,27 +138,30 @@
     if (!active) return;
     active = false; generation++; loading = false; pending = null;
   }
-  function bindSearch(input, popup, select) {
+  function bindSearch(input, popup, select, kind = 'anime') {
+    const names = kind === 'character';
     let options = [];
     let index = -1;
     let blurTimer;
     function close() { popup.hidden = true; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); index = -1; }
     function choose(number) {
       const option = options[number];
-      if (!option || mode === 'anidle' && current?.guesses?.some((guess) => guess.anime.id === option.id)) return;
-      input.value = option.title; select(option); close(); input.focus();
+      if (!option || !names && mode === 'anidle' && current?.guesses?.some((guess) => guess.anime.id === option.id)) return;
+      clearTimeout(blurTimer);
+      input.value = names ? option.name : option.title; select(option); input.focus(); close();
     }
     function paint() {
       popup.hidden = false; input.setAttribute('aria-expanded', 'true');
       popup.innerHTML = options.length ? options.map((anime, i) => {
+        if (names) return '<button type="button" role="option" tabindex="-1" class="mini-suggestion' + (index === i ? ' is-active' : '') + '" id="' + popup.id + '-' + i + '" data-choice="' + i + '" aria-selected="' + String(i === index) + '"><span><strong>' + escape(anime.name) + '</strong>' + (anime.matchedAlias ? '<small>' + escape(anime.matchedAlias) + '</small>' : '') + '</span></button>';
         const used = mode === 'anidle' && current?.guesses?.some((guess) => guess.anime.id === anime.id);
         return '<button type="button" role="option" tabindex="-1" class="mini-suggestion' + (index === i ? ' is-active' : '') + '" id="' + popup.id + '-' + i + '" data-choice="' + i + '" aria-selected="' + String(i === index) + '"' + (used ? ' aria-disabled="true"' : '') + '><img src="' + escape(anime.coverUrl || 'poster-placeholder.svg') + '" alt="" referrerpolicy="no-referrer" loading="lazy"><span><strong>' + escape(anime.title) + '</strong><small>' + (anime.year || 'Ano não informado') + (used ? ' · Já tentado' : '') + '</small></span></button>';
-      }).join('') : '<p class="mini-search-empty">Nenhum anime encontrado no catálogo do desafio.</p>';
+      }).join('') : '<p class="mini-search-empty">' + (names ? 'Nenhum personagem encontrado.' : 'Nenhum anime encontrado no catálogo do desafio.') + '</p>';
       if (index >= 0) input.setAttribute('aria-activedescendant', popup.id + '-' + index); else input.removeAttribute('aria-activedescendant');
     }
     function search() {
-      if (!engine || input.value.trim().length < 2 || input.disabled) { close(); return; }
-      options = engine.searchAnime(input.value, 8); index = -1; paint();
+      if (!engine || input.value.trim().length < (names ? 1 : 2) || input.disabled) { close(); return; }
+      options = names ? engine.searchCharacters(input.value, 8) : engine.searchAnime(input.value, 8); index = -1; paint();
     }
     function keydown(event) {
       if (event.key === 'Escape') { close(); return; }
@@ -178,10 +181,15 @@
       const character = card.characterCorrect ? card.characterGuess : draft.character ?? card.characterGuess;
       const anime = card.animeCorrect ? card.animeGuess : draft.animeText ?? card.animeGuess;
       const disabled = current.completed || loading || !!pending;
-      const field = (type, value, correct, placeholder) => '<div class="mini-character-field' + (correct ? ' is-correct' : current.attemptsUsed && value ? ' is-wrong' : '') + '"><label class="sr-only" for="mini-' + type + '-' + i + '">' + placeholder + ' ' + (i + 1) + '</label><input id="mini-' + type + '-' + i + '" data-slot="' + i + '" data-field="' + type + '" value="' + escape(value || '') + '" placeholder="' + placeholder + '" maxlength="200" autocomplete="off"' + (type === 'work' ? ' role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="mini-work-options-' + i + '"' : '') + (disabled || correct ? ' disabled' : '') + '>' + (correct ? '<span class="mini-field-mark" aria-label="Correto">✓</span>' : '') + (type === 'work' ? '<div id="mini-work-options-' + i + '" class="mini-suggestions" role="listbox" aria-label="Animes encontrados" hidden></div>' : '') + '</div>';
+      const field = (type, value, correct, placeholder) => {
+        const popup = 'mini-' + type + '-options-' + i;
+        return '<div class="mini-character-field' + (correct ? ' is-correct' : current.attemptsUsed && value ? ' is-wrong' : '') + '"><label class="sr-only" for="mini-' + type + '-' + i + '">' + placeholder + ' ' + (i + 1) + '</label><input id="mini-' + type + '-' + i + '" data-slot="' + i + '" data-field="' + type + '" value="' + escape(value || '') + '" placeholder="' + placeholder + '" maxlength="200" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="' + popup + '"' + (disabled || correct ? ' disabled' : '') + '>' + (correct ? '<span class="mini-field-mark" aria-label="Correto">✓</span>' : '') + '<div id="' + popup + '" class="mini-suggestions' + (type === 'name' ? ' mini-name-suggestions' : '') + '" role="listbox" aria-label="' + (type === 'name' ? 'Personagens encontrados' : 'Animes encontrados') + '" hidden></div></div>';
+      };
       return '<article class="mini-character-card"><div class="mini-character-image"><img src="' + escape(card.imageUrl || 'poster-placeholder.svg') + '" alt="Personagem ' + (i + 1) + '" referrerpolicy="no-referrer"><span>0' + (i + 1) + '</span></div>' + field('name', character, card.characterCorrect, 'Nome do personagem') + field('work', anime, card.animeCorrect, 'Anime / obra') + (current.completed ? '<div class="mini-character-answer"><strong>' + escape(card.characterName) + '</strong><span>' + escape(card.animeTitle) + '</span></div>' : '') + '</article>';
     }).join('');
     current.cards.forEach((card, i) => {
+      const nameInput = $('#mini-name-' + i);
+      if (!nameInput.disabled) bindSearch(nameInput, $('#mini-name-options-' + i), (character) => { drafts[i] = { ...(drafts[i] || {}), character: character.name }; }, 'character');
       const input = $('#mini-work-' + i);
       if (!input.disabled) bindSearch(input, $('#mini-work-options-' + i), (anime) => { drafts[i] = { ...(drafts[i] || {}), animeText: anime.title, animeId: anime.id }; });
     });

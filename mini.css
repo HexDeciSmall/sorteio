@@ -38,6 +38,8 @@
 .mini-suggestion img { width: 30px; height: 42px; flex: 0 0 auto; object-fit: cover; border-radius: 3px; }
 .mini-suggestion strong { display: block; font-size: 12px; font-weight: 500; line-height: 1.45; }
 .mini-suggestion small { display: block; margin-top: 3px; color: #aaa0b5; font-size: 10px; }
+.mini-name-suggestions .mini-suggestion { min-height: 44px; padding: 11px 13px; }
+.mini-name-suggestions .mini-suggestion span { min-width: 0; overflow-wrap: anywhere; }
 .mini-search-empty { padding: 15px; color: var(--muted); font-size: 12px; line-height: 1.6; }
 .mini-anidle-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 17px 0 20px; color: var(--muted); font-size: 12px; }
 .mini-summary-heading { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 13px; align-items: center; margin: 12px 0; }

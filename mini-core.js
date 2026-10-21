@@ -401,9 +401,31 @@
       }).filter(function (match) { return Number.isFinite(match.rank); }).sort(function (a, b) { return a.rank - b.rank || a.item.title.localeCompare(b.item.title, 'pt-BR') || a.item.id - b.item.id; }).slice(0, limit).map(function (match) { return publicAnime(match.item); });
     }
 
+    function searchCharacters(query, limit) {
+      var term = normalized(cleanText(query, 300, 'A pesquisa', true));
+      limit = limit === undefined ? 8 : limit;
+      if (!Number.isInteger(limit) || limit < 1 || limit > 50) fail('O limite da pesquisa é inválido.');
+      if (!term) return [];
+      var compactTerm = term.replace(/ /g, '');
+      var words = term.split(' ');
+      return characters.map(function (item) {
+        var best = { item: item, rank: Infinity, alias: null };
+        [item.name].concat(item.aliases).forEach(function (label) {
+          var name = normalized(label);
+          var rank = name === term ? 0 : name.startsWith(term) ? 1 : name.includes(term) || name.replace(/ /g, '').includes(compactTerm) ? 2 : words.every(function (word) { return name.includes(word); }) ? 3 : Infinity;
+          if (rank < best.rank) { best.rank = rank; best.alias = normalized(label) !== normalized(item.name) ? label : null; }
+        });
+        return best;
+      }).filter(function (match) { return Number.isFinite(match.rank); }).sort(function (a, b) { return a.rank - b.rank || a.item.name.localeCompare(b.item.name, 'pt-BR') || a.item.id - b.item.id; }).slice(0, limit).map(function (match) {
+        var result = { id: match.item.id, name: match.item.name };
+        if (match.alias) result.matchedAlias = match.alias;
+        return result;
+      });
+    }
+
     function datasetInfo() { return { version: 1, id: DATASET_ID, startDate: START_DATE, generatedAt: generatedAt, source: 'AniList', animeCount: anime.length, characterCount: characters.length }; }
 
-    return { read: read, apply: apply, view: view, response: response, searchAnime: searchAnime, compareAnime: compareAnime, summary: summary, datasetInfo: datasetInfo };
+    return { read: read, apply: apply, view: view, response: response, searchAnime: searchAnime, searchCharacters: searchCharacters, compareAnime: compareAnime, summary: summary, datasetInfo: datasetInfo };
   }
 
   return { START_DATE: START_DATE, DATASET_ID: DATASET_ID, createEngine: createEngine, normalizeText: normalized };
