@@ -6,17 +6,18 @@
   <meta name="theme-color" content="#141416">
   <meta name="description" content="Roletas de nomes, cartas e animes para sortear entre amigos.">
   <title>Sorteio</title>
-  <link rel="icon" href="favicon.svg?v=login-kv-20261020" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=login-kv-20261020">
-  <script src="core.js?v=login-kv-20261020" defer></script>
-  <script src="catalog.js?v=login-kv-20261020" defer></script>
-  <script src="guessr-core.js?v=login-kv-20261020" defer></script>
-  <script src="daily-core.js?v=login-kv-20261020" defer></script>
-  <script src="app.js?v=login-kv-20261020" defer></script>
-  <script src="firebase-config.js?v=login-kv-20261020" defer></script>
-  <script src="cloud-client.js?v=login-kv-20261020" defer></script>
-  <script src="account.js?v=login-kv-20261020" defer></script>
-  <script src="guessr.js?v=login-kv-20261020" defer></script>
+  <link rel="icon" href="favicon.svg?v=spark-20261020" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css?v=spark-20261020">
+  <script src="core.js?v=spark-20261020" defer></script>
+  <script src="catalog.js?v=spark-20261020" defer></script>
+  <script src="guessr-core.js?v=spark-20261020" defer></script>
+  <script src="daily-core.js?v=spark-20261020" defer></script>
+  <script src="spark-core.js?v=spark-20261020" defer></script>
+  <script src="app.js?v=spark-20261020" defer></script>
+  <script src="firebase-config.js?v=spark-20261020" defer></script>
+  <script src="cloud-client.js?v=spark-20261020" defer></script>
+  <script src="account.js?v=spark-20261020" defer></script>
+  <script src="guessr.js?v=spark-20261020" defer></script>
 </head>
 <body>
   <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -73,7 +74,7 @@
           <div class="wheel-stage" id="stage-anime"><div class="wheel-orbit"></div><div class="wheel-pointer"></div><div class="wheel-rotor" id="rotor-anime"></div><div class="wheel-hub"><svg><use href="#i-play"/></svg></div></div>
           <div class="wheel-result" id="result-anime" aria-live="polite"><strong>—</strong></div>
           <div id="anime-details" class="anime-details" hidden>
-            <div class="anime-info"><img id="anime-cover" class="anime-cover" src="poster-placeholder.svg?v=login-kv-20261020" alt=""><div class="mal-meta"><a id="anime-mal-link" target="_blank" rel="noopener noreferrer" hidden>MyAnimeList ↗</a><span id="anime-mal-score"></span><small id="anime-owner"></small><button id="link-current-anime" class="text-button" hidden>Vincular no MAL</button></div></div>
+            <div class="anime-info"><img id="anime-cover" class="anime-cover" src="poster-placeholder.svg?v=spark-20261020" alt=""><div class="mal-meta"><a id="anime-mal-link" target="_blank" rel="noopener noreferrer" hidden>MyAnimeList ↗</a><span id="anime-mal-score"></span><small id="anime-owner"></small><button id="link-current-anime" class="text-button" hidden>Vincular no MAL</button></div></div>
             <p id="anime-rating-hint" class="anime-rating-hint" hidden>Vincule o anime ao MAL para consultar as notas.</p>
           </div>
           <div id="anime-decision" class="anime-decision" hidden><button id="confirm-anime" class="button button-primary" disabled><svg><use href="#i-check"/></svg>Confirmar</button><button id="reject-anime" class="button button-quiet">Não, girar outro</button></div>
@@ -121,11 +122,10 @@
     <form id="login-form" class="account-form">
       <label class="form-label">Nome de usuário<input id="login-username" name="username" autocomplete="username" minlength="2" maxlength="24" pattern="[A-Za-z0-9_-]+" required autocapitalize="none" spellcheck="false"></label>
       <label class="form-label">Senha<input id="login-password" name="password" type="password" autocomplete="current-password" required></label>
-      <button class="button button-primary" type="submit">Entrar</button><p class="account-help">Peça sua conta ou uma nova senha ao administrador do grupo.</p>
+      <button class="button button-primary" type="submit">Entrar</button><p class="account-help">Use a conta criada para você pelo organizador do grupo.</p>
     </form>
     <div id="account-profile" hidden><div class="account-profile-heading"><div><strong id="account-name"></strong><small id="account-username"></small></div><button id="account-logout" class="text-button danger-text">Sair</button></div>
-      <form id="password-form" class="account-form"><h3 id="password-title">Trocar senha</h3><p id="password-required" class="account-help" hidden>Escolha sua senha para liberar o Diário e o ranking.</p><input id="password-username" name="username" autocomplete="username" class="sr-only" tabindex="-1" aria-label="Seu usuário" readonly><label class="form-label">Senha atual<input id="password-current" type="password" autocomplete="current-password" required></label><label class="form-label">Nova senha<input id="password-new" type="password" autocomplete="new-password" minlength="8" maxlength="128" required></label><label class="form-label">Repetir nova senha<input id="password-confirm" type="password" autocomplete="new-password" minlength="8" maxlength="128" required></label><button class="button button-primary" type="submit">Salvar nova senha</button></form>
-      <section id="admin-panel" class="admin-panel" aria-labelledby="admin-title" hidden><div class="admin-heading"><h3 id="admin-title">Contas do grupo</h3><button id="admin-refresh" class="text-button">Atualizar</button></div><form id="admin-create-form" class="account-form"><label class="form-label">Nome exibido<input id="admin-name" maxlength="80" required placeholder="Ex.: Hex"></label><label class="form-label">Nome de usuário<input id="admin-username" minlength="2" maxlength="24" pattern="[A-Za-z0-9_-]+" required placeholder="Ex.: hex" autocapitalize="none" spellcheck="false"></label><button type="submit" class="button button-quiet">Criar conta</button></form><p id="admin-notice" class="account-notice" role="status"></p><div id="admin-temporary" class="admin-temporary" hidden><span id="admin-temporary-label"></span><code id="admin-temporary-password"></code><small>Copie agora. A senha não será exibida novamente.</small><button type="button" id="admin-temporary-dismiss" class="text-button">Já anotei</button></div><ul id="admin-members" class="admin-members"></ul></section>
+      <form id="password-form" class="account-form"><h3 id="password-title">Trocar senha</h3><input id="password-username" name="username" autocomplete="username" class="sr-only" tabindex="-1" aria-label="Seu usuário" readonly><label class="form-label">Senha atual<input id="password-current" type="password" autocomplete="current-password" required></label><label class="form-label">Nova senha<input id="password-new" type="password" autocomplete="new-password" minlength="8" maxlength="128" required></label><label class="form-label">Repetir nova senha<input id="password-confirm" type="password" autocomplete="new-password" minlength="8" maxlength="128" required></label><button class="button button-primary" type="submit">Salvar nova senha</button></form>
     </div>
   </dialog>
   <dialog id="daily-calendar-dialog" class="daily-calendar-dialog" aria-labelledby="daily-calendar-title">

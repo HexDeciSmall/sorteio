@@ -1,10 +1,10 @@
 # Sorteio
 
-Um clube de anime com três roletas editáveis: **amigo → carta especial → anime da semana**. O frontend em português pode ser publicado no GitHub Pages. As Roletas e o Guessr Livre funcionam localmente; login, Desafio diário oficial e rankings compartilhados usam o Firebase quando configurado.
+Um clube de anime com três roletas editáveis: **amigo → carta especial → anime da semana**. O site em português pode ser publicado no GitHub Pages. As Roletas e o Guessr Livre funcionam localmente; login, Diário online e rankings compartilhados usam **Firebase no plano gratuito Spark** quando configurado.
 
 ## Testar no computador
 
-Extraia todos os arquivos para a mesma pasta e abra `index.html` em um navegador atualizado. Mantenha todos os arquivos entregues, incluindo `styles.css`, `core.js`, `catalog.js`, `app.js`, `guessr-core.js`, `daily-core.js`, `daily-data.json`, `daily-cap.json`, `daily-kv.json`, `guessr.js`, `firebase-config.js`, `cloud-client.js`, `account.js`, `poster-placeholder.svg` e `favicon.svg`. O frontend pronto não exige instalar Node.js para jogar; o preparo inicial do Firebase é explicado no guia `TUTORIAL-FIREBASE.md`, entregue junto ao projeto. As roletas e a edição manual funcionam sem consultas externas; busca, capas remotas, notas pessoais e carregamento das pistas do Guessr Livre precisam de internet.
+Extraia todos os arquivos para a mesma pasta e abra `index.html` em um navegador atualizado. Mantenha todos os arquivos entregues, incluindo `styles.css`, `core.js`, `catalog.js`, `app.js`, `guessr-core.js`, `daily-core.js`, `spark-core.js`, `daily-data.json`, `daily-cap.json`, `daily-kv.json`, `guessr.js`, `firebase-config.js`, `cloud-client.js`, `account.js`, `poster-placeholder.svg` e `favicon.svg`. Não é necessário instalar Node.js, usar terminal ou contratar servidor. O preparo do Firebase é explicado no guia `TUTORIAL-FIREBASE-GRATUITO.md`, entregue junto ao projeto. As roletas e a edição manual funcionam sem consultas externas; busca, capas remotas, notas pessoais e carregamento das pistas do Guessr Livre precisam de internet.
 
 Para usar o **Desafio diário**, abra o site no GitHub Pages ou em uma prévia local servida por HTTP: abrir `index.html` diretamente como `file://` pode bloquear a leitura de `daily-data.json`, `daily-cap.json` e `daily-kv.json`. As roletas e o modo Livre continuam disponíveis no arquivo local, com internet para as consultas do Livre.
 
@@ -104,21 +104,23 @@ O registro de edições em `guessr.js` escolhe a base pela data do desafio. **Ma
 
 No modo local, o progresso, a pontuação diária e a sequência ficam somente neste navegador, na chave `sorteio.guessr.daily.v1`. Os dias já salvos são preservados ao mudar de edição, incluindo conclusões e sequência. Não entram na exportação JSON das roletas. Os arquivos `daily-core.js`, `daily-data.json`, `daily-cap.json` e `daily-kv.json` são obrigatórios para esse modo.
 
-### Login, Diário oficial e rankings online
+### Login, Diário online e rankings
 
-O arquivo `firebase-config.js` vem com a conexão desativada. As Roletas, o Livre e o Diário local continuam disponíveis; login e ranking indicam que a configuração online está pendente. Siga o **TUTORIAL-FIREBASE.md** para criar o projeto, publicar as funções e preencher os quatro identificadores públicos do Firebase. O site continua hospedado no GitHub Pages; o Firebase cuida de autenticação, partidas oficiais e ranking.
+O arquivo `firebase-config.js` vem com a conexão desativada. As Roletas, o Livre e o Diário local continuam disponíveis; login e ranking indicam que a configuração online está pendente. Siga o **TUTORIAL-FIREBASE-GRATUITO.md**: tudo é configurado pelo painel do Firebase, usando **Authentication e Firestore no plano Spark**, sem cartão, Cloud Functions ou publicação de servidor. O site continua no GitHub Pages.
 
-O administrador escolhido pelo grupo cria as contas em **Minha conta → Contas do grupo**, clicando no próprio nome após entrar. Cada colega entra com **usuário e senha**, sem precisar usar um e-mail pessoal. O Firebase mantém um endereço técnico interno para cada usuário; esse endereço não é uma caixa de e-mail. Uma conta criada somente no Authentication, sem ser liberada como membro do Sorteio, não acessa as partidas oficiais nem os rankings.
+As oito contas do grupo são criadas manualmente no painel **Authentication → Users**. Cada colega entra no site com **usuário e senha**, por exemplo `kv`, sem informar e-mail pessoal. O código transforma o usuário em um endereço técnico como `kv@usuarios.sorteio.invalid`; ele não é uma caixa de e-mail. As regras do Firestore liberam os dados apenas para as contas previstas do grupo. Os perfis do AniList continuam separados dessas contas de login.
 
-Contas novas ou com senha redefinida recebem uma senha temporária, exibida uma única vez ao administrador. O colega deve preencher **Crie sua senha**, informando senha atual, nova senha e confirmação, antes de jogar oficialmente ou acessar o ranking. Depois, o formulário fica disponível como **Trocar senha** em Minha conta. Os perfis do AniList continuam separados dessas contas de login.
+Quem conhece a senha atual pode usar **Minha conta → Trocar senha**. Como os endereços técnicos não recebem mensagens, a recuperação por e-mail não funciona. Consulte no tutorial a alternativa para uma senha esquecida e suas consequências para o progresso.
 
-No Diário oficial, o servidor calcula os pontos e registra **uma partida por conta e por data**, com proteção contra envio repetido da mesma jogada. O sorteio online usa uma chave privada do projeto e tem pistas próprias, iguais para todas as contas desse projeto; ele é separado do Diário local. Entrar na mesma conta em outro dispositivo recupera o progresso oficial e a sequência. A pontuação antiga do navegador não é importada automaticamente.
+O Diário online guarda **uma partida por conta e por data**. Entrar na mesma conta em outro dispositivo recupera o progresso e a sequência. O progresso antigo salvo somente no navegador não é importado automaticamente. A pontuação é calculada no navegador e salva no Firestore: esta versão foi feita para um grupo de amigos que confia nos resultados enviados, sem verificação contra trapaça em servidor.
 
-Os rankings **diário** e **mensal** ficam disponíveis para as contas liberadas do grupo. O calendário segue **America/Sao_Paulo**. Datas anteriores, inclusive de meses passados, continuam abertas; a pontuação é atribuída à data e ao mês do desafio, não ao dia em que você decidiu recuperar a partida.
+Os rankings **diário** e **mensal** ficam disponíveis para as contas do grupo. Cada desafio concluído pode somar até **15 pontos**. O calendário segue **America/Sao_Paulo**. Datas anteriores, inclusive de meses passados, continuam abertas; a pontuação é atribuída à data e ao mês do desafio, não ao dia em que você decidiu recuperar a partida.
+
+O Spark tem cotas gratuitas. O uso de um grupo pequeno tende a ficar bem abaixo delas; acompanhe o painel **Firestore → Usage**. Sem ativar faturamento, atingir uma cota pode interromper o serviço até sua renovação, em vez de gerar cobrança por excedente. Veja os [planos do Firebase](https://firebase.google.com/docs/projects/billing/firebase-pricing-plans) e as [cotas do Firestore](https://firebase.google.com/docs/firestore/quotas).
 
 ## Dados, backup e compartilhamento
 
-As listas das Roletas, configurações, ciclo e histórico são salvos automaticamente **somente no navegador e dispositivo usados**. Abrir o mesmo link em outro navegador começa com os dados iniciais. Limpar os dados do navegador pode apagar suas alterações. Quando o Firebase está ativo, contas, partidas do Diário oficial e rankings ficam no servidor e são separados desses dados locais.
+As listas das Roletas, configurações, ciclo e histórico são salvos automaticamente **somente no navegador e dispositivo usados**. Abrir o mesmo link em outro navegador começa com os dados iniciais. Limpar os dados do navegador pode apagar suas alterações. Quando o Firebase está ativo, contas, partidas do Diário online e rankings ficam no Firebase e são separados desses dados locais.
 
 - **Exportar dados**, em Editar listas, baixa um arquivo JSON **somente das Roletas**: listas, perfis AniList vinculados, dados do catálogo salvos nos animes, configurações, estado e resultados do ciclo e histórico. O arquivo não inclui o progresso nem o placar do Guessr Livre ou do Desafio diário.
 - **Importar dados** carrega um backup e substitui os dados atuais após confirmação. Exporte antes se quiser guardar a versão anterior.
@@ -129,7 +131,7 @@ As listas das Roletas, configurações, ciclo e histórico são salvos automatic
 
 Backups anteriores da versão 1 continuam compatíveis com a importação. Os Resultados do ciclo atual também são preservados ao fechar e reabrir o site no mesmo navegador.
 
-Para continuar as Roletas em outro computador, envie o JSON exportado e importe-o lá. Dados salvos ao abrir o arquivo localmente não são transferidos automaticamente para a versão publicada: exporte e importe para fazer essa mudança. O progresso do Livre e do Diário local permanece no navegador onde foi jogado; o Diário oficial acompanha a conta de login.
+Para continuar as Roletas em outro computador, envie o JSON exportado e importe-o lá. Dados salvos ao abrir o arquivo localmente não são transferidos automaticamente para a versão publicada: exporte e importe para fazer essa mudança. O progresso do Livre e do Diário local permanece no navegador onde foi jogado; o Diário online acompanha a conta de login.
 
 ## Publicar no GitHub Pages
 
@@ -163,8 +165,9 @@ O Tenrai substitui a API pública do Jikan, encerrada em **1º de outubro de 202
 - `daily-cap.json`: complemento fixo de CapKiyo, usado na edição `2026-10-21-cap-kv-v1`; também deve ser preservado.
 - `guessr.js`: telas dos modos Livre e Diário, registro das edições por data, consultas e armazenamento separado do Guessr.
 - `firebase-config.js`: configuração pública do seu projeto Firebase e ativação do modo online.
-- `cloud-client.js`: cliente Firebase pronto para o navegador, gerado pelo preparo da pasta `firebase-backend`.
-- `account.js`: entrada, troca de senha, administração das contas do grupo e rankings.
+- `cloud-client.js`: cliente Firebase pronto para o navegador, conectado diretamente ao Authentication e ao Firestore.
+- `spark-core.js`: progresso e resultados do Diário online, com proteção contra registros duplicados.
+- `account.js`: entrada, troca de senha e rankings.
 - `poster-placeholder.svg`: imagem usada quando a capa do anime não está disponível.
 - `favicon.svg`: ícone da aba do navegador.
 

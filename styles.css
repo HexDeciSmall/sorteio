@@ -46,21 +46,14 @@ svg use[href="#i-star"] { stroke: none; }
 .account-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .account-dialog { width: min(460px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 25px; overflow: auto; scrollbar-width: thin; }
 .account-form { display: grid; gap: 17px; margin-top: 20px; }
-.account-form h3, .admin-panel h3 { font-size: 15px; font-weight: 600; }
+.account-form h3 { font-size: 15px; font-weight: 600; }
 .account-help { font-size: 12px; line-height: 1.7; color: var(--muted); }
 .account-notice { margin-top: 18px; color: var(--muted); font-size: 13px; line-height: 1.6; }
 .account-notice:empty { display: none; }
 .account-notice.is-error { color: #edaaa5; }
 .account-profile-heading { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
 .account-profile-heading strong { font-size: 17px; }
-.account-profile-heading small, .admin-members small { display: block; margin-top: 5px; color: var(--muted); }
-.admin-panel { border-top: 1px solid var(--border); margin-top: 26px; padding-top: 18px; }
-.admin-heading { display: flex; align-items: center; justify-content: space-between; }
-.admin-members { list-style: none; padding: 0; margin: 18px 0 0; }
-.admin-members li { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); padding: 12px 0; font-size: 13px; }
-.admin-temporary { display: grid; gap: 10px; margin-top: 18px; padding: 16px; background: #332a20; border: 1px solid #6c5136; border-radius: 8px; font-size: 13px; }
-.admin-temporary code { color: #f5d89e; font-size: 20px; user-select: all; overflow-wrap: anywhere; }
-.admin-temporary small { color: #c7b59d; line-height: 1.5; }
+.account-profile-heading small { display: block; margin-top: 5px; color: var(--muted); }
 .daily-login-gate { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 20px; margin-bottom: 22px; border: 1px solid var(--border); border-radius: 9px; background: var(--panel); color: var(--muted); font-size: 13px; }
 #ranking-view { padding: 30px 0 50px; min-height: calc(100svh - 80px); }
 #ranking-title { font-size: 26px; font-weight: 600; letter-spacing: -.7px; }

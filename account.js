@@ -5,11 +5,11 @@
   const escape = window.RouletteCore.escapeHtml;
   let state = C.snapshot();
   let busy = false;
-  let members = [];
   let rankType = 'daily';
   let rankGeneration = 0;
   let accountGeneration = 0;
   const today = window.DailyGuessr.todayKey();
+  let rankingToday = today;
   $('#ranking-date').value = today;
   $('#ranking-date').max = today;
   $('#ranking-date').min = '2026-10-20';
@@ -20,9 +20,9 @@
     $(selector).textContent = message;
     $(selector).classList.toggle('is-error', error);
   }
-  function eligible() { return state.configured && state.ready && state.member && !state.member.mustChangePassword; }
+  function eligible() { return state.configured && state.ready && state.member; }
   function gateMessage() {
-    return !state.configured ? 'O modo online ainda não foi configurado.' : !state.ready ? 'Conectando…' : !state.member ? 'Entre para ver o ranking do grupo.' : 'Troque a senha temporária para continuar.';
+    return !state.configured ? 'O modo online ainda não foi configurado.' : !state.ready ? 'Conectando…' : !state.member ? 'Entre para ver o ranking do grupo.' : '';
   }
   function renderAccount() {
     const member = state.member;
@@ -30,22 +30,19 @@
     $('#account-title').textContent = member ? 'Minha conta' : 'Entrar';
     $('#login-form').hidden = !!member || !state.configured;
     $('#account-profile').hidden = !member;
-    $('#admin-panel').hidden = !member || !member.isAdmin || member.mustChangePassword;
-    $('#password-required').hidden = !member || !member.mustChangePassword;
-    $('#password-title').textContent = member && member.mustChangePassword ? 'Crie sua senha' : 'Trocar senha';
+    $('#password-title').textContent = 'Trocar senha';
     if (member) {
       $('#account-name').textContent = member.name;
       $('#account-username').textContent = '@' + member.username;
       $('#password-username').value = member.username;
     }
-    $('#account-dialog').querySelectorAll('form button, form input, #account-logout, #admin-refresh, [data-admin-reset]').forEach((element) => { element.disabled = busy || !state.ready; });
+    $('#account-dialog').querySelectorAll('form button, form input, #account-logout').forEach((element) => { element.disabled = busy || !state.ready; });
     if (!state.configured) notice(gateMessage());
   }
   function open() {
     notice(state.error || (!state.configured || !state.ready ? gateMessage() : ''));
     renderAccount();
     if (!$('#account-dialog').open) $('#account-dialog').showModal();
-    if (state.member && state.member.isAdmin && !state.member.mustChangePassword) loadMembers();
   }
   async function runAccount(action, success, authTransition = false) {
     if (busy) return;
@@ -58,33 +55,19 @@
     } catch (error) { if (token === accountGeneration || authTransition) notice(error.message || 'Não foi possível concluir. Tente novamente.', true); }
     finally { busy = false; renderAccount(); }
   }
-  function clearTemporary() {
-    $('#admin-temporary').hidden = true;
-    $('#admin-temporary-password').textContent = '';
-    $('#admin-temporary-label').textContent = '';
-  }
-  function showTemporary(result) {
-    $('#admin-temporary-label').textContent = 'Senha temporária de @' + result.member.username;
-    $('#admin-temporary-password').textContent = result.temporaryPassword;
-    $('#admin-temporary').hidden = false;
-  }
-  async function loadMembers() {
-    if (!eligible() || !state.member.isAdmin) return;
-    const uid = state.member.uid;
-    try {
-      const result = await C.adminList();
-      if (!state.member || state.member.uid !== uid) return;
-      members = result.members;
-      $('#admin-members').innerHTML = members.map((member) => '<li><div><strong>' + escape(member.name) + '</strong><small>@' + escape(member.username) + (member.isAdmin ? ' · administrador' : member.mustChangePassword ? ' · senha temporária' : '') + '</small></div>' + (member.uid !== uid ? '<button class="text-button" data-admin-reset="' + escape(member.uid) + '"' + (busy ? ' disabled' : '') + '>Nova senha</button>' : '') + '</li>').join('');
-    } catch (error) { notice(error.message, true, '#admin-notice'); }
-  }
   async function renderRanking() {
+    const currentDay = window.DailyGuessr.todayKey();
+    if ($('#ranking-date').value === rankingToday) $('#ranking-date').value = currentDay;
+    if ($('#ranking-month').value === rankingToday.slice(0, 7)) $('#ranking-month').value = currentDay.slice(0, 7);
+    $('#ranking-date').max = currentDay;
+    $('#ranking-month').max = currentDay.slice(0, 7);
+    rankingToday = currentDay;
     const request = ++rankGeneration;
     $('#ranking-table-wrap').hidden = true;
     $('#ranking-rows').replaceChildren();
     $('#ranking-footnote').hidden = true;
     $('#ranking-login').hidden = eligible() || !state.configured || !state.ready;
-    $('#ranking-login').textContent = state.member ? 'Trocar senha' : 'Entrar';
+    $('#ranking-login').textContent = 'Entrar';
     $('#ranking-refresh').disabled = !eligible();
     document.querySelectorAll('[data-ranking-type]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.rankingType === rankType)));
     $('#ranking-date').hidden = rankType !== 'daily';
@@ -115,8 +98,7 @@
     const password = $('#login-password').value;
     runAccount(() => C.login(username, password), () => {
       $('#login-password').value = '';
-      if (state.member && state.member.mustChangePassword) notice('Escolha uma nova senha para começar.');
-      else $('#account-dialog').close();
+      $('#account-dialog').close();
     }, true);
   });
   $('#password-form').addEventListener('submit', (event) => {
@@ -124,33 +106,14 @@
     const current = $('#password-current').value;
     const password = $('#password-new').value;
     if (password !== $('#password-confirm').value) { notice('As novas senhas precisam ser iguais.', true); return; }
-    if (password === current) { notice('Escolha uma senha diferente da temporária ou atual.', true); return; }
+    if (password === current) { notice('Escolha uma senha diferente da atual.', true); return; }
     runAccount(() => C.changePassword(current, password), () => {
       $('#password-form').reset();
       notice('Senha alterada. Sua conta está pronta.');
-      if (state.member && state.member.isAdmin) loadMembers();
     });
   });
   $('#account-logout').addEventListener('click', () => runAccount(() => C.logout(), () => $('#account-dialog').close(), true));
-  $('#admin-create-form').addEventListener('submit', (event) => {
-    event.preventDefault();
-    const username = $('#admin-username').value.trim();
-    const name = $('#admin-name').value.trim();
-    clearTemporary();
-    runAccount(() => C.adminCreate({ username, name }), (result) => { showTemporary(result); $('#admin-create-form').reset(); loadMembers(); });
-  });
-  $('#admin-members').addEventListener('click', (event) => {
-    const button = event.target.closest('[data-admin-reset]');
-    if (!button || button.disabled || busy) return;
-    const member = members.find((item) => item.uid === button.dataset.adminReset);
-    if (!member) return;
-    window.SorteioApp.confirm('Gerar nova senha para ' + member.name + '?', 'A senha atual será substituída e essa pessoa precisará entrar novamente.', () => {
-      clearTemporary(); runAccount(() => C.adminReset(member.uid), (result) => { showTemporary(result); loadMembers(); });
-    }, 'Gerar nova senha');
-  });
-  $('#admin-refresh').addEventListener('click', loadMembers);
-  $('#admin-temporary-dismiss').addEventListener('click', clearTemporary);
-  $('#account-dialog').addEventListener('close', () => { clearTemporary(); $('#login-password').value = ''; $('#password-form').reset(); });
+  $('#account-dialog').addEventListener('close', () => { $('#login-password').value = ''; $('#password-form').reset(); });
   $('#ranking-refresh').addEventListener('click', renderRanking);
   $('#ranking-date').addEventListener('change', renderRanking);
   $('#ranking-month').addEventListener('change', renderRanking);
@@ -159,7 +122,7 @@
     const oldUid = state.member && state.member.uid;
     state = snapshot;
     if (oldUid !== (state.member && state.member.uid)) {
-      accountGeneration++; clearTemporary(); members = []; $('#admin-members').replaceChildren();
+      accountGeneration++;
     }
     renderAccount();
     if (state.error) notice(state.error, true);
