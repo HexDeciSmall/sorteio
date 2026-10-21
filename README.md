@@ -1,12 +1,14 @@
 # Sorteio
 
-Um clube de anime com três roletas editáveis: **amigo → carta especial → anime da semana**. O site em português pode ser publicado no GitHub Pages. As Roletas e o Guessr Livre funcionam localmente; login, Diário online e rankings compartilhados usam **Firebase no plano gratuito Spark** quando configurado.
+Um clube de anime com três roletas editáveis: **amigo → carta especial → anime da semana**. A aba Guessr reúne **Livre**, **Notas diárias**, **Personagens** e **Anidle**. O site em português pode ser publicado no GitHub Pages. Os jogos têm progresso local; login, progresso entre dispositivos e rankings compartilhados usam **Firebase no plano gratuito Spark** quando configurado.
+
+**Já usa o site com Firebase funcionando?** Siga `ATUALIZAR-NOVOS-DESAFIOS.md`, entregue com `atualizacao-guessr-diarios.zip`. Esse ZIP de atualização não inclui `firebase-config.js`: preserve o arquivo já publicado e atualize as regras do Firestore no mesmo projeto. Não precisa recriar contas ou configurar outro Firebase.
 
 ## Testar no computador
 
-Extraia todos os arquivos para a mesma pasta e abra `index.html` em um navegador atualizado. Mantenha todos os arquivos entregues, incluindo `styles.css`, `core.js`, `catalog.js`, `app.js`, `guessr-core.js`, `daily-core.js`, `spark-core.js`, `daily-data.json`, `daily-cap.json`, `daily-kv.json`, `guessr.js`, `firebase-config.js`, `cloud-client.js`, `account.js`, `poster-placeholder.svg` e `favicon.svg`. Não é necessário instalar Node.js, usar terminal ou contratar servidor. O preparo do Firebase é explicado no guia `TUTORIAL-FIREBASE-GRATUITO.md`, entregue junto ao projeto. As roletas e a edição manual funcionam sem consultas externas; busca, capas remotas, notas pessoais e carregamento das pistas do Guessr Livre precisam de internet.
+Extraia todos os arquivos para a mesma pasta e abra `index.html` em um navegador atualizado. Mantenha todos os arquivos entregues, incluindo `styles.css`, `core.js`, `catalog.js`, `app.js`, `guessr-core.js`, `daily-core.js`, `spark-core.js`, `daily-data.json`, `daily-cap.json`, `daily-kv.json`, `guessr.js`, `mini-core.js`, `mini-games.js`, `mini.css`, `mini-data.json`, `cloud-client.js`, `account.js`, `poster-placeholder.svg` e `favicon.svg`. O arquivo `firebase-config.js` pertence à configuração do seu site e precisa continuar ao lado de `index.html`. Não é necessário instalar Node.js, usar terminal ou contratar servidor. Para uma primeira instalação, o preparo do Firebase é explicado no guia `TUTORIAL-FIREBASE-GRATUITO.md`. As roletas e a edição manual funcionam sem consultas externas; busca, capas remotas, notas pessoais e carregamento das pistas do Guessr Livre precisam de internet.
 
-Para usar o **Desafio diário**, abra o site no GitHub Pages ou em uma prévia local servida por HTTP: abrir `index.html` diretamente como `file://` pode bloquear a leitura de `daily-data.json`, `daily-cap.json` e `daily-kv.json`. As roletas e o modo Livre continuam disponíveis no arquivo local, com internet para as consultas do Livre.
+Para usar **Notas diárias**, **Personagens** e **Anidle**, abra o site no GitHub Pages ou em uma prévia local servida por HTTP: abrir `index.html` diretamente como `file://` pode bloquear a leitura dos arquivos JSON. As roletas e o modo Livre continuam disponíveis no arquivo local, com internet para as consultas do Livre.
 
 ## Usar com o grupo
 
@@ -74,11 +76,13 @@ O botão de som no topo ativa ou desativa os efeitos sonoros.
 
 ## Guessr
 
-A aba **Guessr** é um jogo para descobrir de qual colega são as avaliações de três animes. Cada rodada usa **3 pistas reais**, com anime, nota e status vindos da lista pública do AniList. Escolha um dos nomes do grupo como palpite. O nome e o link do perfil de origem são revelados ao terminar a rodada, para conferir os dados.
+A aba **Guessr** tem quatro opções: **Livre**, **Notas diárias**, **Personagens** e **Anidle**. As duas primeiras usam avaliações dos colegas. Personagens e Anidle têm somente desafios diários, sem modo infinito.
+
+No **Livre** e nas **Notas diárias**, descubra de qual colega são as avaliações de três animes. Cada rodada usa **3 pistas reais**, com anime, nota e status vindos da lista pública do AniList. Escolha um dos nomes do grupo como palpite. O nome e o link do perfil de origem são revelados ao terminar a rodada, para conferir os dados.
 
 Você tem **3 tentativas por rodada**. Acertar na primeira vale **3 pontos**, na segunda **2 pontos** e na terceira **1 ponto**. Um palpite errado não pode ser repetido na mesma rodada.
 
-Escolha entre **Livre**, com novas rodadas a partir dos perfis vinculados, e **Desafio diário**, com cinco rodadas fixas para cada data.
+Escolha **Livre** para novas rodadas a partir dos perfis vinculados ou **Notas diárias** para cinco rodadas fixas por data.
 
 ### Livre
 
@@ -86,13 +90,13 @@ Para uma rodada valer pontos, é necessário ter **pelo menos 2 colegas com perf
 
 Hex, KV, Cap, Turbo, Mary, Kris e Kyoka já vêm com seus perfis configurados. Cap usa [CapKiyo](https://anilist.co/user/CapKiyo/) tanto nas notas pessoais das roletas quanto no Livre. Quando pelo menos dois estiverem aptos, as rodadas valem pontos. Se apenas um perfil puder ser usado, o site oferece uma **Prévia jogável, sem pontuação**, usando três avaliações reais dele. KV usa [knvcria](https://anilist.co/user/knvcria/). Para incluir Nando, abra **Editar listas → Nomes** e adicione seu link público correto do AniList.
 
-O Guessr consulta apenas informações públicas. Entradas privadas, sem nota ou marcadas como conteúdo adulto não são usadas nas pistas; não há notas ou pistas inventadas. As capas vêm do AniList quando disponíveis. Perfis sem avaliações públicas suficientes não entram como origem de uma rodada.
+O Livre consulta apenas informações públicas. Entradas privadas, sem nota ou marcadas como conteúdo adulto não são usadas nas pistas; não há notas ou pistas inventadas. As capas vêm do AniList quando disponíveis. Perfis sem avaliações públicas suficientes não entram como origem de uma rodada.
 
 As listas consultadas ficam em cache temporário na memória da sessão por **5 minutos**, limitado a **20 perfis**, para evitar consultas repetidas. Mudanças no AniList podem levar esse intervalo para aparecer. Não é necessário entrar no AniList pelo site nem fornecer senha ou chave de API.
 
 O jogo e o placar do Livre são **locais ao navegador**. Os dados necessários para continuar a rodada, as tentativas e as estatísticas são salvos na chave local `sorteio.guessr.v1`, separada dos dados das roletas; as listas completas consultadas não são gravadas nesse salvamento. Nesse modo não há banco de dados online, partida compartilhada nem sincronização de pontuação entre os colegas. Jogar Guessr não consome os nomes ou animes das roletas.
 
-### Desafio diário local
+### Notas diárias locais
 
 Cada data tem **5 rodadas fixas**, iguais para todos os navegadores que usam esta versão do site. Cada rodada oferece três tentativas e vale 3, 2 ou 1 ponto conforme o acerto: o máximo por dia é **15 pontos**. Termine as cinco rodadas para concluir o desafio; **concluir também conta para a sequência de participação quando houver erros**.
 
@@ -104,25 +108,47 @@ O registro de edições em `guessr.js` escolhe a base pela data do desafio. **Ma
 
 No modo local, o progresso, a pontuação diária e a sequência ficam somente neste navegador, na chave `sorteio.guessr.daily.v1`. Os dias já salvos são preservados ao mudar de edição, incluindo conclusões e sequência. Não entram na exportação JSON das roletas. Os arquivos `daily-core.js`, `daily-data.json`, `daily-cap.json` e `daily-kv.json` são obrigatórios para esse modo.
 
-### Login, Diário online e rankings
+### Personagens — desafio diário
 
-O arquivo `firebase-config.js` vem com a conexão desativada. As Roletas, o Livre e o Diário local continuam disponíveis; login e ranking indicam que a configuração online está pendente. Siga o **TUTORIAL-FIREBASE-GRATUITO.md**: tudo é configurado pelo painel do Firebase, usando **Authentication e Firestore no plano Spark**, sem cartão, Cloud Functions ou publicação de servidor. O site continua no GitHub Pages.
+São **4 personagens por data**. Digite o **nome do personagem** e o **anime ao qual pertence** em cada cartão. O nome e a obra valem **1 ponto cada**, até **8 pontos** por desafio. Nomes alternativos e títulos equivalentes do catálogo são aceitos; no anime, o preenchimento oferece sugestões.
+
+Você pode fazer **até 3 envios para o conjunto dos quatro cartões**, e não três envios por personagem. As respostas certas ficam marcadas e você continua tentando as partes que faltam. Ao acertar tudo ou esgotar os envios, o jogo termina e mostra as respostas. Não há modo Livre ou infinito para Personagens.
+
+### Anidle — desafio diário
+
+Descubra o anime do dia usando **até 22 palpites diferentes**, escolhidos nas sugestões da busca. Cada palpite compara **ano, estúdio, origem, nota, gêneros e tags** com o anime secreto. As setas indicam se o ano ou a nota da resposta são maiores ou menores. Cores e indicadores distinguem valores iguais, parciais ou diferentes.
+
+A primeira pista aparece após **11 palpites** e mostra **formato e quantidade de episódios**. Após **17 palpites**, a capa é liberada. Acertar vale **22 pontos na primeira tentativa, 21 na segunda, até 1 na última**; terminar sem acertar vale zero. Um título já usado não pode ser enviado novamente no mesmo desafio. Não há modo Livre ou infinito para Anidle.
+
+### Calendário e dados dos novos jogos
+
+Personagens e Anidle começam em **20/10/2026**, seguem o fuso **America/Sao_Paulo** e têm o próprio calendário para recuperar datas passadas até hoje. Cada modo guarda o próprio progresso e a própria sequência de participação. Terminar um desafio conta para a sequência mesmo sem pontuação máxima; a sequência de um jogo não se mistura à dos outros.
+
+O arquivo `mini-data.json` contém uma base fixa de **851 animes e 320 personagens**, com metadados públicos do AniList. Os desafios de uma mesma data são iguais para todos que usam esta versão, independentemente de quem está conectado. As respostas e características vêm dessa base, sem consulta ao AniList durante cada palpite. As imagens continuam sendo carregadas dos endereços do catálogo e precisam de internet. A nota usada pelo Anidle é a média registrada nessa base, não a avaliação pessoal dos colegas nem uma nota atualizada ao vivo.
+
+Sem Firebase ativo, esses dois jogos guardam o progresso somente no navegador, na chave `sorteio.mini.v1`. Com a conexão configurada, entre na conta para usar o progresso sincronizado e os rankings; partidas locais antigas não são importadas automaticamente. Jogar qualquer um deles não altera as roletas, o placar Livre ou os desafios de Notas.
+
+Preserve `mini-data.json` e seu identificador `mini-2026-10-20-v1` nas próximas atualizações. Trocar a base sem versionamento pode mudar desafios de datas já jogadas.
+
+### Login, progresso online e rankings
+
+Em uma primeira instalação, o arquivo `firebase-config.js` precisa receber os dados públicos do seu projeto e `enabled: true`. Se a conexão estiver desativada, as Roletas, o Livre e os desafios locais continuam disponíveis; login e ranking indicam que a configuração online está pendente. Siga o **TUTORIAL-FIREBASE-GRATUITO.md** para configurar pelo painel do Firebase, usando **Authentication e Firestore no plano Spark**, sem cartão, Cloud Functions ou publicação de servidor. Se o login já funciona, preserve esse arquivo e siga apenas o guia de atualização. O site continua no GitHub Pages.
 
 As oito contas do grupo são criadas manualmente no painel **Authentication → Users**. Cada colega entra no site com **usuário e senha**, por exemplo `kv`, sem informar e-mail pessoal. O código transforma o usuário em um endereço técnico como `kv@usuarios.sorteio.invalid`; ele não é uma caixa de e-mail. As regras do Firestore liberam os dados apenas para as contas previstas do grupo. Os perfis do AniList continuam separados dessas contas de login.
 
 Quem conhece a senha atual pode usar **Minha conta → Trocar senha**. Como os endereços técnicos não recebem mensagens, a recuperação por e-mail não funciona. Consulte no tutorial a alternativa para uma senha esquecida e suas consequências para o progresso.
 
-O Diário online guarda **uma partida por conta e por data**. Entrar na mesma conta em outro dispositivo recupera o progresso e a sequência. O progresso antigo salvo somente no navegador não é importado automaticamente. A pontuação é calculada no navegador e salva no Firestore: esta versão foi feita para um grupo de amigos que confia nos resultados enviados, sem verificação contra trapaça em servidor.
+Cada desafio online guarda **uma partida por conta, por jogo e por data**. Entrar na mesma conta em outro dispositivo recupera o progresso e a sequência de cada jogo. O progresso antigo salvo somente no navegador não é importado automaticamente. A pontuação é calculada no navegador e salva no Firestore: esta versão foi feita para um grupo de amigos que confia nos resultados enviados, sem verificação contra trapaça em servidor.
 
-Os rankings **diário** e **mensal** ficam disponíveis para as contas do grupo. Cada desafio concluído pode somar até **15 pontos**. O calendário segue **America/Sao_Paulo**. Datas anteriores, inclusive de meses passados, continuam abertas; a pontuação é atribuída à data e ao mês do desafio, não ao dia em que você decidiu recuperar a partida.
+Na aba **Ranking**, selecione **Notas**, **Personagens** ou **Anidle** e depois o período **diário** ou **mensal**. Os rankings são separados por jogo: cada dia concluído vale até **15 pontos em Notas**, **8 em Personagens** e **22 em Anidle**. O calendário segue **America/Sao_Paulo**. Datas anteriores, inclusive de meses passados, continuam abertas; a pontuação é atribuída à data e ao mês do desafio, não ao dia em que você decidiu recuperar a partida. Os novos jogos exigem as regras atualizadas do arquivo `firebase-gratuito/firestore.rules`.
 
 O Spark tem cotas gratuitas. O uso de um grupo pequeno tende a ficar bem abaixo delas; acompanhe o painel **Firestore → Usage**. Sem ativar faturamento, atingir uma cota pode interromper o serviço até sua renovação, em vez de gerar cobrança por excedente. Veja os [planos do Firebase](https://firebase.google.com/docs/projects/billing/firebase-pricing-plans) e as [cotas do Firestore](https://firebase.google.com/docs/firestore/quotas).
 
 ## Dados, backup e compartilhamento
 
-As listas das Roletas, configurações, ciclo e histórico são salvos automaticamente **somente no navegador e dispositivo usados**. Abrir o mesmo link em outro navegador começa com os dados iniciais. Limpar os dados do navegador pode apagar suas alterações. Quando o Firebase está ativo, contas, partidas do Diário online e rankings ficam no Firebase e são separados desses dados locais.
+As listas das Roletas, configurações, ciclo e histórico são salvos automaticamente **somente no navegador e dispositivo usados**. Abrir o mesmo link em outro navegador começa com os dados iniciais. Limpar os dados do navegador pode apagar suas alterações. Quando o Firebase está ativo, contas, partidas dos desafios online e rankings ficam no Firebase e são separados desses dados locais.
 
-- **Exportar dados**, em Editar listas, baixa um arquivo JSON **somente das Roletas**: listas, perfis AniList vinculados, dados do catálogo salvos nos animes, configurações, estado e resultados do ciclo e histórico. O arquivo não inclui o progresso nem o placar do Guessr Livre ou do Desafio diário.
+- **Exportar dados**, em Editar listas, baixa um arquivo JSON **somente das Roletas**: listas, perfis AniList vinculados, dados do catálogo salvos nos animes, configurações, estado e resultados do ciclo e histórico. O arquivo não inclui o progresso nem o placar de nenhum jogo do Guessr.
 - **Importar dados** carrega um backup e substitui os dados atuais após confirmação. Exporte antes se quiser guardar a versão anterior.
 - **Copiar**, na seção Resultados abaixo das roletas, copia apenas as atribuições do ciclo atual, no mesmo formato exibido na lista.
 - **Copiar**, no Histórico, copia as rodadas guardadas de todos os ciclos.
@@ -131,12 +157,12 @@ As listas das Roletas, configurações, ciclo e histórico são salvos automatic
 
 Backups anteriores da versão 1 continuam compatíveis com a importação. Os Resultados do ciclo atual também são preservados ao fechar e reabrir o site no mesmo navegador.
 
-Para continuar as Roletas em outro computador, envie o JSON exportado e importe-o lá. Dados salvos ao abrir o arquivo localmente não são transferidos automaticamente para a versão publicada: exporte e importe para fazer essa mudança. O progresso do Livre e do Diário local permanece no navegador onde foi jogado; o Diário online acompanha a conta de login.
+Para continuar as Roletas em outro computador, envie o JSON exportado e importe-o lá. Dados salvos ao abrir o arquivo localmente não são transferidos automaticamente para a versão publicada: exporte e importe para fazer essa mudança. O progresso do Livre e dos desafios locais permanece no navegador onde foi jogado; os desafios online acompanham a conta de login.
 
 ## Publicar no GitHub Pages
 
 1. Crie um repositório no GitHub. Um repositório público é a opção compatível com o plano gratuito.
-2. Envie **o conteúdo desta pasta para a raiz do repositório**, incluindo o arquivo oculto `.nojekyll`. O `index.html` deve ficar na raiz, e não dentro de uma pasta `otaku-roll`.
+2. Envie **o conteúdo desta pasta para a raiz do repositório**, incluindo o arquivo oculto `.nojekyll`. O `index.html` deve ficar na raiz, e não dentro de uma pasta `otaku-roll`. Ao atualizar um site que já funciona, mantenha o `firebase-config.js` existente: ele não acompanha o ZIP `atualizacao-guessr-diarios.zip`.
 3. Em **Settings → Pages**, escolha **Deploy from a branch** em Source.
 4. Selecione a branch **main**, a pasta **/(root)** e clique em **Save**. Se sua branch tiver outro nome, selecione aquela que contém os arquivos.
 5. Aguarde a publicação e use o endereço exibido pelo GitHub em Pages.
@@ -164,10 +190,14 @@ O Tenrai substitui a API pública do Jikan, encerrada em **1º de outubro de 202
 - `daily-kv.json`: complemento fixo de knvcria, com 367 avaliações públicas para a edição de 21/10/2026.
 - `daily-cap.json`: complemento fixo de CapKiyo, usado na edição `2026-10-21-cap-kv-v1`; também deve ser preservado.
 - `guessr.js`: telas dos modos Livre e Diário, registro das edições por data, consultas e armazenamento separado do Guessr.
+- `mini-core.js`: regras, validação, respostas equivalentes e seleção diária de Personagens e Anidle.
+- `mini-games.js`: telas, calendário, palpites e progresso dos dois novos desafios.
+- `mini.css`: aparência dos cartões de personagens e da tabela de comparações do Anidle.
+- `mini-data.json`: base fixa de 851 animes e 320 personagens do AniList, identificada como `mini-2026-10-20-v1`.
 - `firebase-config.js`: configuração pública do seu projeto Firebase e ativação do modo online.
 - `cloud-client.js`: cliente Firebase pronto para o navegador, conectado diretamente ao Authentication e ao Firestore.
 - `spark-core.js`: progresso e resultados do Diário online, com proteção contra registros duplicados.
-- `account.js`: entrada, troca de senha e rankings.
+- `account.js`: entrada, troca de senha e rankings separados para Notas, Personagens e Anidle.
 - `poster-placeholder.svg`: imagem usada quando a capa do anime não está disponível.
 - `favicon.svg`: ícone da aba do navegador.
 

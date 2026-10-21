@@ -6,6 +6,8 @@ function createCloudClient(host, sdk) {
   let db = null;
   let enginePromise = null;
   let calendarCache = null;
+  let miniEnginePromise = null;
+  const miniCalendarCache = new Map();
   let initPromise = null;
   let finishInitial = null;
   let authGeneration = 0;
@@ -302,6 +304,7 @@ function createCloudClient(host, sdk) {
     sessionUid = null;
     sessionTask = null;
     calendarCache = null;
+    miniCalendarCache.clear();
     state.user = null;
     state.member = null;
     state.ready = true;
@@ -419,18 +422,127 @@ function createCloudClient(host, sdk) {
   }
   async function guess(date,friendId,index,id) { return mutate(date,{kind:'guess',friendId:identifier(friendId,'Amigo',80),index,id}); }
   async function next(date,index,id) { return mutate(date,{kind:'next',index,id}); }
+  function miniMode(mode) {
+    if(!['characters','anidle'].includes(mode))throw clientError('Escolha um desafio válido.', 'cloud/invalid-argument');
+    return mode;
+  }
+  function miniEngine() {
+    if(!miniEnginePromise)miniEnginePromise=(async()=>{
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),15000);
+      try {
+        const response=await host.fetch('mini-data.json?v=mini-2026-10-20-v1',{signal:controller.signal});
+        if(!response.ok)throw clientError('Não foi possível carregar o desafio.', 'cloud/unavailable');
+        const dataset=await response.json();
+        return host.SorteioMiniCore.createEngine({dataset,D:host.DailyGuessr});
+      }catch(error){
+        if(error?.sorteioCloudError||error?.code?.startsWith('cloud/'))throw error;
+        throw clientError('Não foi possível carregar o desafio. Tente novamente.', 'cloud/unavailable');
+      }finally{clearTimeout(timer);}
+    })().catch((error)=>{miniEnginePromise=null;throw error;});
+    return miniEnginePromise;
+  }
+  function miniGameRef(username,mode,date){return sdk.doc(db,'sparkMiniPlayers',username,'days',mode+'_'+date);}
+  function miniScoreRef(username,mode,date){return sdk.doc(db,'sparkMiniScores',mode+'_'+date+'_'+username);}
+  async function miniCalendar(username,mode,refresh=false){
+    const key=username+':'+mode;
+    if(!refresh&&miniCalendarCache.has(key))return clone(miniCalendarCache.get(key));
+    const result=await sdk.getDocs(sdk.query(sdk.collection(db,'sparkMiniPlayers',username,'days'),sdk.limit(10000)));
+    const days=[];
+    result.docs.forEach((document)=>{
+      const raw=document.data();
+      if(!['characters','anidle'].includes(raw.mode)||document.id!==raw.mode+'_'+dateValue(raw.date)||typeof raw.completed!=='boolean'||!Array.isArray(raw.attempts))throw clientError('O progresso salvo está inconsistente.', 'cloud/invalid-response');
+      if(raw.mode===mode)days.push({date:raw.date,completed:raw.completed,started:raw.attempts.length>0});
+    });
+    days.sort((a,b)=>a.date.localeCompare(b.date));
+    if(state.member?.username===username)miniCalendarCache.set(key,clone(days));
+    return days;
+  }
+  async function miniResponse(game,day,username,mode,refresh=false){
+    const days=await miniCalendar(username,mode,refresh);
+    const entry={date:day.date,completed:day.completed,started:day.attempts.length>0};
+    const index=days.findIndex((item)=>item.date===day.date);
+    if(index<0)days.push(entry);else days[index]=entry;
+    days.sort((a,b)=>a.date.localeCompare(b.date));
+    if(state.member?.username===username)miniCalendarCache.set(username+':'+mode,clone(days));
+    return game.response(day,days,todayKey());
+  }
+  async function getMiniDay(mode,date){
+    miniMode(mode);
+    if(date!==undefined)dateValue(date);
+    return request(async(user)=>{
+      const member=memberFromAuth(user);
+      const game=await miniEngine();
+      const selected=date===undefined?todayKey():date;
+      const stored=await sdk.getDoc(miniGameRef(member.username,mode,selected));
+      const {day}=game.read(stored.exists()?stored.data():null,mode,selected,todayKey());
+      return miniResponse(game,day,member.username,mode,true);
+    });
+  }
+  async function playMini(mode,date,action){
+    miniMode(mode);dateValue(date);
+    if(!action||typeof action!=='object'||!['characters','anime','giveup'].includes(action.kind))throw clientError('Informe um palpite válido.', 'cloud/invalid-argument');
+    identifier(action.id,'Identificador da solicitação');
+    if(action.kind!=='giveup'&&action.kind!==(mode==='characters'?'characters':'anime'))throw clientError('Esse palpite pertence a outro desafio.', 'cloud/invalid-argument');
+    const submitted=clone(action);
+    return request(async(user)=>{
+      const member=memberFromAuth(user);
+      const game=await miniEngine();
+      const today=todayKey();
+      const ref=miniGameRef(member.username,mode,date);
+      const ledger=miniScoreRef(member.username,mode,date);
+      let result;
+      try{result=await sdk.runTransaction(db,async(transaction)=>{
+        const stored=await transaction.get(ref);
+        const changed=game.apply(stored.exists()?stored.data():null,mode,date,submitted,today);
+        if(!changed.changed)return changed;
+        let score=null;
+        if(changed.day.completed)score=await transaction.get(ledger);
+        if(score?.exists())throw clientError('Esse resultado já foi registrado.', 'cloud/already-exists');
+        const record={...changed.record,username:member.username,name:member.name,updatedAt:sdk.serverTimestamp()};
+        transaction.set(ref,record);
+        if(changed.day.completed)transaction.set(ledger,{version:1,mode,date,month:record.month,dateNumber:record.dateNumber,username:member.username,name:member.name,score:record.score,wins:record.wins,daysCompleted:1,savedAt:sdk.serverTimestamp()});
+        return changed;
+      });}catch(error){
+        // Re-read a simultaneous completion and accept only this exact saved request.
+        if(!['permission-denied','aborted','unavailable','deadline-exceeded','failed-precondition'].includes(error.code))throw error;
+        try{
+          const saved=await sdk.getDocFromServer(ref);
+          if(!saved.exists())throw error;
+          const replay=game.apply(saved.data(),mode,date,submitted,today);
+          if(replay.changed)throw error;
+          if(replay.day.completed){
+            const entry=await sdk.getDocFromServer(ledger);
+            const row=entry.exists()?entry.data():null;
+            if(!row||row.version!==1||row.daysCompleted!==1||row.mode!==mode||row.date!==date||row.month!==replay.record.month||row.dateNumber!==replay.record.dateNumber||row.username!==member.username||row.name!==member.name||row.score!==replay.record.score||row.wins!==replay.record.wins)throw error;
+          }
+          result=replay;
+        }catch(_){throw error;}
+      }
+      return miniResponse(game,result.day,member.username,mode);
+    });
+  }
   async function getRankings(query={}) {
     if(!['daily','monthly'].includes(query.type))throw clientError('Escolha o ranking diário ou mensal.', 'cloud/invalid-argument');
+    const game=query.game===undefined?'notes':query.game;
+    if(!['notes','characters','anidle'].includes(game))throw clientError('Escolha um ranking válido.', 'cloud/invalid-argument');
     const today=todayKey();
     const period=query.type==='daily'?dateValue(query.date===undefined?today:query.date):query.month===undefined?today.slice(0,7):query.month;
     if(typeof period!=='string' || (query.type==='monthly'&&!/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) || period<'2026-10'+(query.type==='daily'?'-20':'') || period>(query.type==='daily'?today:today.slice(0,7)))throw clientError('Escolha um período disponível.', 'cloud/invalid-argument');
     return request(async(user)=>{
       const member=memberFromAuth(user);
-      const result=await sdk.getDocs(sdk.query(sdk.collection(db,'sparkScores'),sdk.where(query.type==='daily'?'date':'month','==',period),sdk.limit(300)));
+      const result=await sdk.getDocs(sdk.query(sdk.collection(db,game==='notes'?'sparkScores':'sparkMiniScores'),sdk.where(query.type==='daily'?'date':'month','==',period),sdk.limit(game==='notes'?300:600)));
       const totals=new Map();
       result.docs.forEach((document)=>{
         const row=document.data();
-        if(!Object.hasOwn(friends,row.username)||!Number.isInteger(row.score)||row.score<0||row.score>15||!Number.isInteger(row.wins)||row.wins<0||row.wins>5||document.id!==row.date+'_'+row.username||row.daysCompleted!==1)throw clientError('O ranking salvo está inconsistente.', 'cloud/invalid-response');
+        if(game==='notes'){
+          if(!Object.hasOwn(friends,row.username)||!Number.isInteger(row.score)||row.score<0||row.score>15||!Number.isInteger(row.wins)||row.wins<0||row.wins>5||document.id!==row.date+'_'+row.username||row.daysCompleted!==1)throw clientError('O ranking salvo está inconsistente.', 'cloud/invalid-response');
+        }else{
+          const maximum=row.mode==='characters'?8:22;
+          const wins=row.mode==='characters'?4:1;
+          if(!['characters','anidle'].includes(row.mode)||row.version!==1||!Object.hasOwn(friends,row.username)||!Number.isInteger(row.score)||row.score<0||row.score>maximum||!Number.isInteger(row.wins)||row.wins<0||row.wins>wins||document.id!==row.mode+'_'+row.date+'_'+row.username||row.daysCompleted!==1||row.month!==dateValue(row.date).slice(0,7)||row.dateNumber!==Number(row.date.replaceAll('-',''))||row[query.type==='daily'?'date':'month']!==period)throw clientError('O ranking salvo está inconsistente.', 'cloud/invalid-response');
+          if(row.mode!==game)return;
+        }
         const entry=totals.get(row.username)||{uid:row.username,username:row.username,name:friends[row.username],score:0,wins:0,daysCompleted:0,streak:0};
         entry.score+=row.score;entry.wins+=row.wins;entry.daysCompleted++;
         totals.set(row.username,entry);
@@ -438,10 +550,10 @@ function createCloudClient(host, sdk) {
       const rows=[...totals.values()].sort((a,b)=>b.score-a.score||b.wins-a.wins||a.name.localeCompare(b.name,'pt-BR'));
       let previous,position=0;
       rows.forEach((row,index)=>{if(!previous||row.score!==previous.score||row.wins!==previous.wins)position=index+1;row.position=position;previous=row;});
-      return {type:query.type,period,rows,selfUid:member.username};
+      return {game,type:query.type,period,rows,selfUid:member.username};
     });
   }
-  return Object.freeze({init,subscribe,snapshot,login,logout,changePassword,getDay,guess,next,getRankings});
+  return Object.freeze({init,subscribe,snapshot,login,logout,changePassword,getDay,guess,next,getMiniDay,playMini,getRankings});
 }
 
 async function loadFirebase() {

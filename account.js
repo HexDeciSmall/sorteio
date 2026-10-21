@@ -6,6 +6,8 @@
   let state = C.snapshot();
   let busy = false;
   let rankType = 'daily';
+  let rankingGame = 'notes';
+  const rankingGames = { notes: { name: 'Notas diárias', max: 15, wins: 'Acertos' }, characters: { name: 'Personagens', max: 8, wins: 'Completos' }, anidle: { name: 'Anidle', max: 22, wins: 'Vitórias' } };
   let rankGeneration = 0;
   let accountGeneration = 0;
   const today = window.DailyGuessr.todayKey();
@@ -56,6 +58,10 @@
     finally { busy = false; renderAccount(); }
   }
   async function renderRanking() {
+    const selectedGame = rankingGames[rankingGame];
+    $('#ranking-description').textContent = selectedGame.name + ' · até ' + selectedGame.max + ' pontos por dia';
+    $('#ranking-wins-label').textContent = selectedGame.wins;
+    document.querySelectorAll('[data-ranking-game]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.rankingGame === rankingGame)));
     const currentDay = window.DailyGuessr.todayKey();
     if ($('#ranking-date').value === rankingToday) $('#ranking-date').value = currentDay;
     if ($('#ranking-month').value === rankingToday.slice(0, 7)) $('#ranking-month').value = currentDay.slice(0, 7);
@@ -77,7 +83,7 @@
     const period = rankType === 'daily' ? $('#ranking-date').value : $('#ranking-month').value;
     if (!period) { notice('Escolha um período.', false, '#ranking-notice'); return; }
     try {
-      const result = await C.getRankings({ type: rankType, ...(rankType === 'daily' ? { date: period } : { month: period }) });
+      const result = await C.getRankings({ game: rankingGame, type: rankType, ...(rankType === 'daily' ? { date: period } : { month: period }) });
       if (request !== rankGeneration) return;
       let position = 0;
       let previous;
@@ -118,6 +124,7 @@
   $('#ranking-date').addEventListener('change', renderRanking);
   $('#ranking-month').addEventListener('change', renderRanking);
   document.querySelectorAll('[data-ranking-type]').forEach((button) => button.addEventListener('click', () => { rankType = button.dataset.rankingType; renderRanking(); }));
+  document.querySelectorAll('[data-ranking-game]').forEach((button) => button.addEventListener('click', () => { rankingGame = button.dataset.rankingGame; renderRanking(); }));
   C.subscribe((snapshot) => {
     const oldUid = state.member && state.member.uid;
     state = snapshot;
@@ -130,6 +137,6 @@
     document.dispatchEvent(new CustomEvent('sorteio:account-changed'));
   });
   document.addEventListener('sorteio:daily-completed', () => { rankGeneration++; });
-  window.SorteioAccount = Object.freeze({ open, renderRanking });
+  window.SorteioAccount = Object.freeze({ open, renderRanking, selectGame(value) { if (Object.hasOwn(rankingGames, value)) rankingGame = value; } });
   C.init().catch((error) => notice(error.message, true));
 })();

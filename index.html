@@ -6,18 +6,21 @@
   <meta name="theme-color" content="#141416">
   <meta name="description" content="Roletas de nomes, cartas e animes para sortear entre amigos.">
   <title>Sorteio</title>
-  <link rel="icon" href="favicon.svg?v=spark-20261020" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=spark-20261020">
-  <script src="core.js?v=spark-20261020" defer></script>
-  <script src="catalog.js?v=spark-20261020" defer></script>
-  <script src="guessr-core.js?v=spark-20261020" defer></script>
-  <script src="daily-core.js?v=spark-20261020" defer></script>
-  <script src="spark-core.js?v=spark-20261020" defer></script>
-  <script src="app.js?v=spark-20261020" defer></script>
-  <script src="firebase-config.js?v=spark-20261020" defer></script>
-  <script src="cloud-client.js?v=spark-20261020" defer></script>
-  <script src="account.js?v=spark-20261020" defer></script>
-  <script src="guessr.js?v=spark-20261020" defer></script>
+  <link rel="icon" href="favicon.svg?v=mini-20261020" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css?v=mini-20261020">
+  <link rel="stylesheet" href="mini.css?v=mini-20261020">
+  <script src="core.js?v=mini-20261020" defer></script>
+  <script src="catalog.js?v=mini-20261020" defer></script>
+  <script src="guessr-core.js?v=mini-20261020" defer></script>
+  <script src="daily-core.js?v=mini-20261020" defer></script>
+  <script src="spark-core.js?v=mini-20261020" defer></script>
+  <script src="mini-core.js?v=mini-20261020" defer></script>
+  <script src="app.js?v=mini-20261020" defer></script>
+  <script src="firebase-config.js?v=mini-20261020" defer></script>
+  <script src="cloud-client.js?v=mini-20261020" defer></script>
+  <script src="account.js?v=mini-20261020" defer></script>
+  <script src="mini-games.js?v=mini-20261020" defer></script>
+  <script src="guessr.js?v=mini-20261020" defer></script>
 </head>
 <body>
   <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -74,7 +77,7 @@
           <div class="wheel-stage" id="stage-anime"><div class="wheel-orbit"></div><div class="wheel-pointer"></div><div class="wheel-rotor" id="rotor-anime"></div><div class="wheel-hub"><svg><use href="#i-play"/></svg></div></div>
           <div class="wheel-result" id="result-anime" aria-live="polite"><strong>—</strong></div>
           <div id="anime-details" class="anime-details" hidden>
-            <div class="anime-info"><img id="anime-cover" class="anime-cover" src="poster-placeholder.svg?v=spark-20261020" alt=""><div class="mal-meta"><a id="anime-mal-link" target="_blank" rel="noopener noreferrer" hidden>MyAnimeList ↗</a><span id="anime-mal-score"></span><small id="anime-owner"></small><button id="link-current-anime" class="text-button" hidden>Vincular no MAL</button></div></div>
+            <div class="anime-info"><img id="anime-cover" class="anime-cover" src="poster-placeholder.svg?v=mini-20261020" alt=""><div class="mal-meta"><a id="anime-mal-link" target="_blank" rel="noopener noreferrer" hidden>MyAnimeList ↗</a><span id="anime-mal-score"></span><small id="anime-owner"></small><button id="link-current-anime" class="text-button" hidden>Vincular no MAL</button></div></div>
             <p id="anime-rating-hint" class="anime-rating-hint" hidden>Vincule o anime ao MAL para consultar as notas.</p>
           </div>
           <div id="anime-decision" class="anime-decision" hidden><button id="confirm-anime" class="button button-primary" disabled><svg><use href="#i-check"/></svg>Confirmar</button><button id="reject-anime" class="button button-quiet">Não, girar outro</button></div>
@@ -94,7 +97,8 @@
     </main>
     <main id="guessr-view" aria-labelledby="guessr-title" hidden>
       <div class="guessr-heading"><div><div class="guessr-title-line"><h1 id="guessr-title">De quem são essas notas?</h1><span id="guessr-mode" class="guessr-mode" hidden>Prévia</span></div><p id="guessr-intro">Três animes. Três tentativas.</p></div><button id="guessr-profiles" class="text-button"><svg><use href="#i-user"/></svg>Perfis</button></div>
-      <div class="guessr-game-nav" role="group" aria-label="Modo de jogo"><button type="button" data-guessr-mode="free" aria-pressed="true">Livre</button><button type="button" data-guessr-mode="daily" aria-pressed="false">Desafio diário</button></div>
+      <div class="guessr-game-nav" role="group" aria-label="Modo de jogo"><button type="button" data-guessr-mode="free" aria-pressed="true">Livre</button><button type="button" data-guessr-mode="daily" aria-pressed="false">Notas diárias</button><button type="button" data-guessr-mode="characters" aria-pressed="false">Personagens</button><button type="button" data-guessr-mode="anidle" aria-pressed="false">Anidle</button></div>
+      <div id="notes-game">
       <section id="daily-panel" class="daily-panel" aria-label="Desafio diário" hidden>
         <div class="daily-header"><div class="daily-date-controls"><button type="button" id="daily-calendar-open" class="button button-quiet" aria-haspopup="dialog" aria-controls="daily-calendar-dialog"><svg aria-hidden="true"><use href="#i-calendar"/></svg><span id="daily-date-label">Selecionar data</span></button><button type="button" id="daily-today" class="text-button">Hoje</button></div><div class="daily-streaks"><span>🔥 <strong id="daily-streak">0</strong> <span id="daily-streak-unit">dias</span></span><span>Recorde <strong id="daily-best">0</strong></span></div></div>
         <ol id="daily-progress" class="daily-progress" aria-label="Rodadas do desafio diário"></ol>
@@ -106,14 +110,42 @@
       <div id="guessr-clues" class="guessr-clues" aria-label="Três pistas de anime"></div>
       <div class="guessr-answer-area"><p id="guessr-feedback" class="guessr-feedback" role="status">Carregue as pistas para começar.</p><div id="guessr-options" class="guessr-options" aria-label="Escolha o colega"></div><a id="guessr-reveal" class="guessr-reveal" target="_blank" rel="noopener noreferrer" hidden></a></div>
       <div class="guessr-actions"><button id="guessr-next" class="button button-primary"><svg><use href="#i-dice"/></svg>Carregar pistas</button></div>
+      </div>
+      <section id="mini-games" hidden aria-label="Desafios diários de anime">
+        <div id="mini-daily-toolbar" class="mini-daily-toolbar">
+          <div class="mini-date-controls"><label class="mini-date-label"><svg aria-hidden="true"><use href="#i-calendar"/></svg><span class="sr-only">Data do desafio</span><input id="mini-date" type="date" min="2026-10-20"></label><button type="button" id="mini-today" class="text-button">Hoje</button></div>
+          <div class="daily-streaks"><span>🔥 <strong id="mini-streak">0</strong> <span id="mini-streak-unit">dias</span></span><span>Recorde <strong id="mini-best">0</strong></span></div>
+        </div>
+        <p id="mini-notice" class="guessr-notice" role="status" hidden></p>
+        <div id="mini-login-gate" class="daily-login-gate" hidden><p id="mini-login-message">Entre para jogar o desafio diário.</p><button type="button" class="button button-primary" data-account-open>Entrar</button></div>
+        <div id="mini-board" hidden>
+          <div class="mini-round-heading"><strong id="mini-attempts">Tentativa 1 / 3</strong><span id="mini-progress">0 / 8 campos</span></div>
+          <form id="mini-character-form" autocomplete="off" hidden>
+            <div id="mini-character-cards" class="mini-character-cards"></div>
+            <div class="mini-submit-row"><button type="submit" id="mini-character-submit" class="button button-primary">Enviar palpites</button><button type="button" class="text-button" id="mini-character-giveup">Encerrar desafio</button></div>
+          </form>
+          <section id="mini-anidle-panel" aria-label="Anidle diário" hidden>
+            <form id="mini-anidle-form" class="mini-anidle-form" autocomplete="off"><div class="mini-search"><label class="sr-only" for="mini-anime-input">Buscar anime para o palpite</label><input id="mini-anime-input" type="search" maxlength="200" placeholder="Buscar anime…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="mini-anime-options"><div id="mini-anime-options" class="mini-suggestions" role="listbox" aria-label="Animes encontrados" hidden></div></div><button id="mini-anime-submit" type="submit" class="button button-primary">Palpitar</button></form>
+            <div class="mini-anidle-meta"><span id="mini-hint-status"></span><button type="button" id="mini-anidle-giveup" class="text-button">Encerrar desafio</button></div>
+            <div class="mini-summary-heading"><div class="mini-color-key" aria-label="Cores das pistas"><span><i class="mini-dot-correct"></i>Igual</span><span><i class="mini-dot-partial"></i>Parcial</span><span><i class="mini-dot-miss"></i>Diferente</span></div><label class="mini-summary-switch"><input id="mini-summary-toggle" type="checkbox" checked>Resumo</label></div>
+            <div id="mini-anidle-summary" class="mini-table-scroll mini-summary-table"><table class="mini-comparison"><thead><tr><th scope="col">Resumo</th><th scope="col">Ano</th><th scope="col">Estúdio</th><th scope="col">Origem</th><th scope="col">Nota</th><th scope="col">Gêneros</th><th scope="col">Tags</th></tr></thead><tbody id="mini-summary-body"></tbody></table></div>
+            <div id="mini-guesses-wrap" class="mini-table-scroll" hidden><table class="mini-comparison"><thead><tr><th scope="col">Anime</th><th scope="col">Ano</th><th scope="col">Estúdio</th><th scope="col">Origem</th><th scope="col">Nota <small>AniList</small></th><th scope="col">Gêneros</th><th scope="col">Tags</th></tr></thead><tbody id="mini-anidle-guesses"></tbody></table></div>
+            <div id="mini-hints" class="mini-hints" hidden></div>
+          </section>
+          <div id="mini-finished" class="mini-finished" role="status" hidden><div><strong id="mini-finished-title"></strong><p id="mini-finished-description"></p></div><button type="button" id="mini-ranking" class="button button-quiet">Ver ranking</button></div>
+        </div>
+        <button type="button" id="mini-retry" class="button button-primary" hidden>Tentar novamente</button>
+      </section>
+
     </main>
     <main id="ranking-view" aria-labelledby="ranking-title" hidden>
-      <div class="guessr-heading"><div><h1 id="ranking-title">Ranking</h1><p>Desafio diário · até 15 pontos por dia</p></div><button id="ranking-refresh" class="text-button">Atualizar</button></div>
+      <div class="guessr-heading"><div><h1 id="ranking-title">Ranking</h1><p id="ranking-description">Notas diárias · até 15 pontos por dia</p></div><button id="ranking-refresh" class="text-button">Atualizar</button></div>
+      <div class="guessr-game-nav ranking-games" role="group" aria-label="Jogo do ranking"><button type="button" data-ranking-game="notes" aria-pressed="true">Notas</button><button type="button" data-ranking-game="characters" aria-pressed="false">Personagens</button><button type="button" data-ranking-game="anidle" aria-pressed="false">Anidle</button></div>
       <div class="ranking-controls"><div class="guessr-game-nav" role="group" aria-label="Período do ranking"><button data-ranking-type="daily" aria-pressed="true">Diário</button><button data-ranking-type="monthly" aria-pressed="false">Mensal</button></div><label class="ranking-period"><span class="sr-only" id="ranking-period-label">Data do ranking</span><input id="ranking-date" type="date" aria-labelledby="ranking-period-label"><input id="ranking-month" type="month" aria-label="Mês do ranking" hidden></label></div>
       <p id="ranking-notice" class="account-notice" role="status"></p>
       <button id="ranking-login" class="button button-primary" data-account-open hidden>Entrar</button>
-      <div id="ranking-table-wrap" class="ranking-table-wrap" hidden><table class="ranking-table"><thead><tr><th scope="col">Posição</th><th scope="col">Colega</th><th scope="col">Pontos</th><th scope="col">Acertos</th><th scope="col">Dias</th></tr></thead><tbody id="ranking-rows"></tbody></table></div>
-      <p id="ranking-footnote" class="ranking-footnote" hidden>O resultado entra no ranking ao concluir as cinco rodadas. Dias antigos contam para a data do desafio.</p>
+      <div id="ranking-table-wrap" class="ranking-table-wrap" hidden><table class="ranking-table"><thead><tr><th scope="col">Posição</th><th scope="col">Colega</th><th scope="col">Pontos</th><th scope="col" id="ranking-wins-label">Acertos</th><th scope="col">Dias</th></tr></thead><tbody id="ranking-rows"></tbody></table></div>
+      <p id="ranking-footnote" class="ranking-footnote" hidden>O resultado entra no ranking ao encerrar o desafio. Dias antigos contam para a data do desafio.</p>
     </main>
   </div>
   <dialog id="account-dialog" class="account-dialog" aria-labelledby="account-title">

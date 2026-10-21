@@ -28,7 +28,8 @@
   let messageIsError = false;
   let storageMessage = '';
   const dailyKey = 'sorteio.guessr.daily.v1';
-  let guessrMode = location.hash.startsWith('#guessr-diario') ? 'daily' : 'free';
+  let guessrMode = location.hash.startsWith('#guessr-personagens') ? 'characters' : location.hash.startsWith('#guessr-anidle') ? 'anidle' : location.hash.startsWith('#guessr-diario') ? 'daily' : 'free';
+  const miniMode = () => guessrMode === 'characters' || guessrMode === 'anidle';
   let selectedDate = D.todayKey();
   const linkedDate = location.hash.match(/^#guessr-diario\/(\d{4}-\d{2}-\d{2})$/);
   if (linkedDate) { try { selectedDate = D.validateDate(linkedDate[1]); } catch (error) { /* Use today for an invalid link. */ } }
@@ -60,6 +61,7 @@
     catch (error) { dailyStorageMessage = 'O navegador não permitiu salvar o desafio diário.'; }
   }
   function updateLocation() {
+    if (miniMode()) return;
     try { history.replaceState(null, '', guessrMode === 'daily' ? '#guessr-diario/' + selectedDate : '#guessr'); } catch (error) { /* Navigation still works without history. */ }
   }
   function setSection(next) {
@@ -70,8 +72,10 @@
     document.querySelectorAll('[data-section]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.section === next)));
     if (next === 'guessr') {
       updateLocation(); render();
+      if (miniMode()) window.SorteioMiniUI.activate(guessrMode);
       if (guessrMode === 'daily' && !dailyView && !dailyLoading) loadDaily(selectedDate);
     } else {
+      window.SorteioMiniUI.deactivate();
       if (next === 'ranking') window.SorteioAccount.renderRanking();
       try { history.replaceState(null, '', next === 'ranking' ? '#ranking' : '#roletas'); } catch (error) { /* The active tab still works when history is unavailable. */ }
     }
@@ -102,6 +106,11 @@
     $('#daily-summary').textContent = summary && summary.completed ? 'Desafio concluído · ' + summary.wins + '/5 acertos · ' + summary.score + '/15 pontos' : '';
   }
   function render() {
+    $('#notes-game').hidden = miniMode();
+    $('#mini-games').hidden = !miniMode();
+    document.querySelectorAll('[data-guessr-mode]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.guessrMode === guessrMode)));
+    if (miniMode()) { window.SorteioMiniUI.header(guessrMode); return; }
+    window.SorteioMiniUI.deactivate();
     const daily = guessrMode === 'daily';
     const gated = daily && online && !cloudReady();
     $('#daily-login-gate').hidden = !gated;
@@ -312,6 +321,7 @@
       loadController = null; loading = false; progress = '';
     }
     updateLocation(); render();
+    if (miniMode()) window.SorteioMiniUI.activate(guessrMode);
     if (guessrMode === 'daily' && !dailyView && !dailyLoading) loadDaily(selectedDate);
   }));
   $('#daily-calendar-open').addEventListener('click', openCalendar);
