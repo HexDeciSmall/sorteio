@@ -6,14 +6,17 @@
   <meta name="theme-color" content="#141416">
   <meta name="description" content="Roletas de nomes, cartas e animes para sortear entre amigos.">
   <title>Sorteio</title>
-  <link rel="icon" href="favicon.svg?v=cap-20261020" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=cap-20261020">
-  <script src="core.js?v=cap-20261020" defer></script>
-  <script src="catalog.js?v=cap-20261020" defer></script>
-  <script src="guessr-core.js?v=cap-20261020" defer></script>
-  <script src="daily-core.js?v=cap-20261020" defer></script>
-  <script src="app.js?v=cap-20261020" defer></script>
-  <script src="guessr.js?v=cap-20261020" defer></script>
+  <link rel="icon" href="favicon.svg?v=login-kv-20261020" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css?v=login-kv-20261020">
+  <script src="core.js?v=login-kv-20261020" defer></script>
+  <script src="catalog.js?v=login-kv-20261020" defer></script>
+  <script src="guessr-core.js?v=login-kv-20261020" defer></script>
+  <script src="daily-core.js?v=login-kv-20261020" defer></script>
+  <script src="app.js?v=login-kv-20261020" defer></script>
+  <script src="firebase-config.js?v=login-kv-20261020" defer></script>
+  <script src="cloud-client.js?v=login-kv-20261020" defer></script>
+  <script src="account.js?v=login-kv-20261020" defer></script>
+  <script src="guessr.js?v=login-kv-20261020" defer></script>
 </head>
 <body>
   <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -42,8 +45,9 @@
   <div class="app-shell">
     <header class="topbar">
       <a class="brand" href="#" aria-label="Sorteio, início">Sorteio<span class="brand-dot"></span></a>
-      <nav class="site-nav" aria-label="Seções"><button data-section="draw" aria-pressed="true" aria-controls="draw-view">Roletas</button><button data-section="guessr" aria-pressed="false" aria-controls="guessr-view">Guessr</button></nav>
+      <nav class="site-nav" aria-label="Seções"><button data-section="draw" aria-pressed="true" aria-controls="draw-view">Roletas</button><button data-section="guessr" aria-pressed="false" aria-controls="guessr-view">Guessr</button><button data-section="ranking" aria-pressed="false" aria-controls="ranking-view">Ranking</button></nav>
       <div class="top-actions">
+        <button class="account-trigger text-button" id="account-open" aria-haspopup="dialog"><svg><use href="#i-user"/></svg><span id="account-label">Entrar</span></button>
         <button class="icon-button" id="sound-toggle" aria-label="Desativar som" title="Desativar som" aria-pressed="true"><svg><use href="#i-volume"/></svg></button>
         <button class="icon-button history-trigger" data-view="history" aria-label="Histórico" title="Histórico"><svg><use href="#i-clock"/></svg><span id="history-nav-count" class="nav-count" hidden>0</span></button>
         <button class="icon-button" id="manage-all" aria-label="Editar listas" title="Editar listas"><svg><use href="#i-sliders"/></svg></button>
@@ -69,7 +73,7 @@
           <div class="wheel-stage" id="stage-anime"><div class="wheel-orbit"></div><div class="wheel-pointer"></div><div class="wheel-rotor" id="rotor-anime"></div><div class="wheel-hub"><svg><use href="#i-play"/></svg></div></div>
           <div class="wheel-result" id="result-anime" aria-live="polite"><strong>—</strong></div>
           <div id="anime-details" class="anime-details" hidden>
-            <div class="anime-info"><img id="anime-cover" class="anime-cover" src="poster-placeholder.svg?v=cap-20261020" alt=""><div class="mal-meta"><a id="anime-mal-link" target="_blank" rel="noopener noreferrer" hidden>MyAnimeList ↗</a><span id="anime-mal-score"></span><small id="anime-owner"></small><button id="link-current-anime" class="text-button" hidden>Vincular no MAL</button></div></div>
+            <div class="anime-info"><img id="anime-cover" class="anime-cover" src="poster-placeholder.svg?v=login-kv-20261020" alt=""><div class="mal-meta"><a id="anime-mal-link" target="_blank" rel="noopener noreferrer" hidden>MyAnimeList ↗</a><span id="anime-mal-score"></span><small id="anime-owner"></small><button id="link-current-anime" class="text-button" hidden>Vincular no MAL</button></div></div>
             <p id="anime-rating-hint" class="anime-rating-hint" hidden>Vincule o anime ao MAL para consultar as notas.</p>
           </div>
           <div id="anime-decision" class="anime-decision" hidden><button id="confirm-anime" class="button button-primary" disabled><svg><use href="#i-check"/></svg>Confirmar</button><button id="reject-anime" class="button button-quiet">Não, girar outro</button></div>
@@ -97,11 +101,33 @@
       </section>
       <div id="guessr-toolbar" class="guessr-toolbar"><div class="guessr-stats"><span><strong id="guessr-score">0</strong> pontos</span><span><strong id="guessr-wins">0 / 0</strong> acertos</span></div><div class="guessr-toolbar-actions"><span id="guessr-attempts">3 tentativas</span><button id="guessr-clear-score" class="text-button">Zerar placar</button></div></div>
       <p id="guessr-notice" class="guessr-notice" role="status" hidden></p>
+      <div id="daily-login-gate" class="daily-login-gate" hidden><p id="daily-login-message">Entre para jogar o desafio diário.</p><button type="button" class="button button-primary" data-account-open>Entrar</button></div>
       <div id="guessr-clues" class="guessr-clues" aria-label="Três pistas de anime"></div>
       <div class="guessr-answer-area"><p id="guessr-feedback" class="guessr-feedback" role="status">Carregue as pistas para começar.</p><div id="guessr-options" class="guessr-options" aria-label="Escolha o colega"></div><a id="guessr-reveal" class="guessr-reveal" target="_blank" rel="noopener noreferrer" hidden></a></div>
       <div class="guessr-actions"><button id="guessr-next" class="button button-primary"><svg><use href="#i-dice"/></svg>Carregar pistas</button></div>
     </main>
+    <main id="ranking-view" aria-labelledby="ranking-title" hidden>
+      <div class="guessr-heading"><div><h1 id="ranking-title">Ranking</h1><p>Desafio diário · até 15 pontos por dia</p></div><button id="ranking-refresh" class="text-button">Atualizar</button></div>
+      <div class="ranking-controls"><div class="guessr-game-nav" role="group" aria-label="Período do ranking"><button data-ranking-type="daily" aria-pressed="true">Diário</button><button data-ranking-type="monthly" aria-pressed="false">Mensal</button></div><label class="ranking-period"><span class="sr-only" id="ranking-period-label">Data do ranking</span><input id="ranking-date" type="date" aria-labelledby="ranking-period-label"><input id="ranking-month" type="month" aria-label="Mês do ranking" hidden></label></div>
+      <p id="ranking-notice" class="account-notice" role="status"></p>
+      <button id="ranking-login" class="button button-primary" data-account-open hidden>Entrar</button>
+      <div id="ranking-table-wrap" class="ranking-table-wrap" hidden><table class="ranking-table"><thead><tr><th scope="col">Posição</th><th scope="col">Colega</th><th scope="col">Pontos</th><th scope="col">Acertos</th><th scope="col">Dias</th></tr></thead><tbody id="ranking-rows"></tbody></table></div>
+      <p id="ranking-footnote" class="ranking-footnote" hidden>O resultado entra no ranking ao concluir as cinco rodadas. Dias antigos contam para a data do desafio.</p>
+    </main>
   </div>
+  <dialog id="account-dialog" class="account-dialog" aria-labelledby="account-title">
+    <div class="dialog-heading"><h2 id="account-title">Entrar</h2><button class="icon-button" data-close="account-dialog" aria-label="Fechar conta"><svg><use href="#i-close"/></svg></button></div>
+    <p id="account-notice" class="account-notice" role="status"></p>
+    <form id="login-form" class="account-form">
+      <label class="form-label">Nome de usuário<input id="login-username" name="username" autocomplete="username" minlength="2" maxlength="24" pattern="[A-Za-z0-9_-]+" required autocapitalize="none" spellcheck="false"></label>
+      <label class="form-label">Senha<input id="login-password" name="password" type="password" autocomplete="current-password" required></label>
+      <button class="button button-primary" type="submit">Entrar</button><p class="account-help">Peça sua conta ou uma nova senha ao administrador do grupo.</p>
+    </form>
+    <div id="account-profile" hidden><div class="account-profile-heading"><div><strong id="account-name"></strong><small id="account-username"></small></div><button id="account-logout" class="text-button danger-text">Sair</button></div>
+      <form id="password-form" class="account-form"><h3 id="password-title">Trocar senha</h3><p id="password-required" class="account-help" hidden>Escolha sua senha para liberar o Diário e o ranking.</p><input id="password-username" name="username" autocomplete="username" class="sr-only" tabindex="-1" aria-label="Seu usuário" readonly><label class="form-label">Senha atual<input id="password-current" type="password" autocomplete="current-password" required></label><label class="form-label">Nova senha<input id="password-new" type="password" autocomplete="new-password" minlength="8" maxlength="128" required></label><label class="form-label">Repetir nova senha<input id="password-confirm" type="password" autocomplete="new-password" minlength="8" maxlength="128" required></label><button class="button button-primary" type="submit">Salvar nova senha</button></form>
+      <section id="admin-panel" class="admin-panel" aria-labelledby="admin-title" hidden><div class="admin-heading"><h3 id="admin-title">Contas do grupo</h3><button id="admin-refresh" class="text-button">Atualizar</button></div><form id="admin-create-form" class="account-form"><label class="form-label">Nome exibido<input id="admin-name" maxlength="80" required placeholder="Ex.: Hex"></label><label class="form-label">Nome de usuário<input id="admin-username" minlength="2" maxlength="24" pattern="[A-Za-z0-9_-]+" required placeholder="Ex.: hex" autocapitalize="none" spellcheck="false"></label><button type="submit" class="button button-quiet">Criar conta</button></form><p id="admin-notice" class="account-notice" role="status"></p><div id="admin-temporary" class="admin-temporary" hidden><span id="admin-temporary-label"></span><code id="admin-temporary-password"></code><small>Copie agora. A senha não será exibida novamente.</small><button type="button" id="admin-temporary-dismiss" class="text-button">Já anotei</button></div><ul id="admin-members" class="admin-members"></ul></section>
+    </div>
+  </dialog>
   <dialog id="daily-calendar-dialog" class="daily-calendar-dialog" aria-labelledby="daily-calendar-title">
     <div class="dialog-heading"><h2 id="daily-calendar-title">Calendário</h2><button type="button" class="icon-button" data-close="daily-calendar-dialog" aria-label="Fechar calendário"><svg><use href="#i-close"/></svg></button></div>
     <div class="daily-month-nav"><button type="button" id="daily-month-prev" class="icon-button" aria-label="Mês anterior"><svg><use href="#i-arrow"/></svg></button><h3 id="daily-calendar-month" aria-live="polite"></h3><button type="button" id="daily-month-next" class="icon-button" aria-label="Próximo mês"><svg><use href="#i-arrow"/></svg></button></div>

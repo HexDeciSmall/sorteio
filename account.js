@@ -1,0 +1,172 @@
+(function () {
+  'use strict';
+  const C = window.SorteioCloud;
+  const $ = (selector) => document.querySelector(selector);
+  const escape = window.RouletteCore.escapeHtml;
+  let state = C.snapshot();
+  let busy = false;
+  let members = [];
+  let rankType = 'daily';
+  let rankGeneration = 0;
+  let accountGeneration = 0;
+  const today = window.DailyGuessr.todayKey();
+  $('#ranking-date').value = today;
+  $('#ranking-date').max = today;
+  $('#ranking-date').min = '2026-10-20';
+  $('#ranking-month').value = today.slice(0, 7);
+  $('#ranking-month').max = today.slice(0, 7);
+  $('#ranking-month').min = '2026-10';
+  function notice(message, error = false, selector = '#account-notice') {
+    $(selector).textContent = message;
+    $(selector).classList.toggle('is-error', error);
+  }
+  function eligible() { return state.configured && state.ready && state.member && !state.member.mustChangePassword; }
+  function gateMessage() {
+    return !state.configured ? 'O modo online ainda não foi configurado.' : !state.ready ? 'Conectando…' : !state.member ? 'Entre para ver o ranking do grupo.' : 'Troque a senha temporária para continuar.';
+  }
+  function renderAccount() {
+    const member = state.member;
+    $('#account-label').textContent = member ? member.name : 'Entrar';
+    $('#account-title').textContent = member ? 'Minha conta' : 'Entrar';
+    $('#login-form').hidden = !!member || !state.configured;
+    $('#account-profile').hidden = !member;
+    $('#admin-panel').hidden = !member || !member.isAdmin || member.mustChangePassword;
+    $('#password-required').hidden = !member || !member.mustChangePassword;
+    $('#password-title').textContent = member && member.mustChangePassword ? 'Crie sua senha' : 'Trocar senha';
+    if (member) {
+      $('#account-name').textContent = member.name;
+      $('#account-username').textContent = '@' + member.username;
+      $('#password-username').value = member.username;
+    }
+    $('#account-dialog').querySelectorAll('form button, form input, #account-logout, #admin-refresh, [data-admin-reset]').forEach((element) => { element.disabled = busy || !state.ready; });
+    if (!state.configured) notice(gateMessage());
+  }
+  function open() {
+    notice(state.error || (!state.configured || !state.ready ? gateMessage() : ''));
+    renderAccount();
+    if (!$('#account-dialog').open) $('#account-dialog').showModal();
+    if (state.member && state.member.isAdmin && !state.member.mustChangePassword) loadMembers();
+  }
+  async function runAccount(action, success, authTransition = false) {
+    if (busy) return;
+    const token = accountGeneration;
+    busy = true; notice(''); renderAccount();
+    try {
+      const result = await action();
+      if (token !== accountGeneration && !authTransition) return;
+      if (success) success(result);
+    } catch (error) { if (token === accountGeneration || authTransition) notice(error.message || 'Não foi possível concluir. Tente novamente.', true); }
+    finally { busy = false; renderAccount(); }
+  }
+  function clearTemporary() {
+    $('#admin-temporary').hidden = true;
+    $('#admin-temporary-password').textContent = '';
+    $('#admin-temporary-label').textContent = '';
+  }
+  function showTemporary(result) {
+    $('#admin-temporary-label').textContent = 'Senha temporária de @' + result.member.username;
+    $('#admin-temporary-password').textContent = result.temporaryPassword;
+    $('#admin-temporary').hidden = false;
+  }
+  async function loadMembers() {
+    if (!eligible() || !state.member.isAdmin) return;
+    const uid = state.member.uid;
+    try {
+      const result = await C.adminList();
+      if (!state.member || state.member.uid !== uid) return;
+      members = result.members;
+      $('#admin-members').innerHTML = members.map((member) => '<li><div><strong>' + escape(member.name) + '</strong><small>@' + escape(member.username) + (member.isAdmin ? ' · administrador' : member.mustChangePassword ? ' · senha temporária' : '') + '</small></div>' + (member.uid !== uid ? '<button class="text-button" data-admin-reset="' + escape(member.uid) + '"' + (busy ? ' disabled' : '') + '>Nova senha</button>' : '') + '</li>').join('');
+    } catch (error) { notice(error.message, true, '#admin-notice'); }
+  }
+  async function renderRanking() {
+    const request = ++rankGeneration;
+    $('#ranking-table-wrap').hidden = true;
+    $('#ranking-rows').replaceChildren();
+    $('#ranking-footnote').hidden = true;
+    $('#ranking-login').hidden = eligible() || !state.configured || !state.ready;
+    $('#ranking-login').textContent = state.member ? 'Trocar senha' : 'Entrar';
+    $('#ranking-refresh').disabled = !eligible();
+    document.querySelectorAll('[data-ranking-type]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.rankingType === rankType)));
+    $('#ranking-date').hidden = rankType !== 'daily';
+    $('#ranking-month').hidden = rankType !== 'monthly';
+    if (!eligible()) { notice(gateMessage(), false, '#ranking-notice'); return; }
+    notice('Carregando ranking…', false, '#ranking-notice');
+    const period = rankType === 'daily' ? $('#ranking-date').value : $('#ranking-month').value;
+    if (!period) { notice('Escolha um período.', false, '#ranking-notice'); return; }
+    try {
+      const result = await C.getRankings({ type: rankType, ...(rankType === 'daily' ? { date: period } : { month: period }) });
+      if (request !== rankGeneration) return;
+      let position = 0;
+      let previous;
+      $('#ranking-rows').innerHTML = result.rows.map((row, index) => {
+        if (!previous || row.score !== previous.score || row.wins !== previous.wins) position = index + 1;
+        previous = row;
+        return '<tr' + (row.uid === result.selfUid ? ' class="is-self"' : '') + '><td>' + position + 'º</td><th scope="row">' + escape(row.name) + (row.uid === result.selfUid ? '<span class="ranking-you">você</span>' : '') + '</th><td class="ranking-points">' + row.score + '</td><td>' + row.wins + '</td><td>' + row.daysCompleted + '</td></tr>';
+      }).join('');
+      $('#ranking-table-wrap').hidden = !result.rows.length;
+      $('#ranking-footnote').hidden = false;
+      notice(result.rows.length ? '' : 'Nenhum desafio concluído neste período.', false, '#ranking-notice');
+    } catch (error) { if (request === rankGeneration) notice(error.message || 'Não foi possível carregar o ranking.', true, '#ranking-notice'); }
+  }
+  document.querySelectorAll('#account-open, [data-account-open]').forEach((button) => button.addEventListener('click', open));
+  $('#login-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const username = $('#login-username').value.trim();
+    const password = $('#login-password').value;
+    runAccount(() => C.login(username, password), () => {
+      $('#login-password').value = '';
+      if (state.member && state.member.mustChangePassword) notice('Escolha uma nova senha para começar.');
+      else $('#account-dialog').close();
+    }, true);
+  });
+  $('#password-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const current = $('#password-current').value;
+    const password = $('#password-new').value;
+    if (password !== $('#password-confirm').value) { notice('As novas senhas precisam ser iguais.', true); return; }
+    if (password === current) { notice('Escolha uma senha diferente da temporária ou atual.', true); return; }
+    runAccount(() => C.changePassword(current, password), () => {
+      $('#password-form').reset();
+      notice('Senha alterada. Sua conta está pronta.');
+      if (state.member && state.member.isAdmin) loadMembers();
+    });
+  });
+  $('#account-logout').addEventListener('click', () => runAccount(() => C.logout(), () => $('#account-dialog').close(), true));
+  $('#admin-create-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const username = $('#admin-username').value.trim();
+    const name = $('#admin-name').value.trim();
+    clearTemporary();
+    runAccount(() => C.adminCreate({ username, name }), (result) => { showTemporary(result); $('#admin-create-form').reset(); loadMembers(); });
+  });
+  $('#admin-members').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-admin-reset]');
+    if (!button || button.disabled || busy) return;
+    const member = members.find((item) => item.uid === button.dataset.adminReset);
+    if (!member) return;
+    window.SorteioApp.confirm('Gerar nova senha para ' + member.name + '?', 'A senha atual será substituída e essa pessoa precisará entrar novamente.', () => {
+      clearTemporary(); runAccount(() => C.adminReset(member.uid), (result) => { showTemporary(result); loadMembers(); });
+    }, 'Gerar nova senha');
+  });
+  $('#admin-refresh').addEventListener('click', loadMembers);
+  $('#admin-temporary-dismiss').addEventListener('click', clearTemporary);
+  $('#account-dialog').addEventListener('close', () => { clearTemporary(); $('#login-password').value = ''; $('#password-form').reset(); });
+  $('#ranking-refresh').addEventListener('click', renderRanking);
+  $('#ranking-date').addEventListener('change', renderRanking);
+  $('#ranking-month').addEventListener('change', renderRanking);
+  document.querySelectorAll('[data-ranking-type]').forEach((button) => button.addEventListener('click', () => { rankType = button.dataset.rankingType; renderRanking(); }));
+  C.subscribe((snapshot) => {
+    const oldUid = state.member && state.member.uid;
+    state = snapshot;
+    if (oldUid !== (state.member && state.member.uid)) {
+      accountGeneration++; clearTemporary(); members = []; $('#admin-members').replaceChildren();
+    }
+    renderAccount();
+    if (state.error) notice(state.error, true);
+    if (!$('#ranking-view').hidden) renderRanking();
+    document.dispatchEvent(new CustomEvent('sorteio:account-changed'));
+  });
+  document.addEventListener('sorteio:daily-completed', () => { rankGeneration++; });
+  window.SorteioAccount = Object.freeze({ open, renderRanking });
+  C.init().catch((error) => notice(error.message, true));
+})();

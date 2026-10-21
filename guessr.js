@@ -4,6 +4,15 @@
   const G = window.GuessrCore;
   const S = window.AnimeServices;
   const D = window.DailyGuessr;
+  const C = window.SorteioCloud;
+  const online = window.SORTEIO_FIREBASE && window.SORTEIO_FIREBASE.enabled === true;
+  let cloudMeta = null;
+  let cloudUid = null;
+  let cloudGeneration = 0;
+  let pendingCloud = null;
+  const cloudReady = () => { const state = C.snapshot(); return state.ready && state.configured && state.member && !state.member.mustChangePassword; };
+  const dailyToday = () => online && cloudMeta ? cloudMeta.today : D.todayKey();
+  const dailyStart = () => online && cloudMeta ? cloudMeta.startDate : dailyDataset && dailyDataset.startDate;
   const html = window.RouletteCore.escapeHtml;
   const $ = (selector) => document.querySelector(selector);
   const key = 'sorteio.guessr.v1';
@@ -57,11 +66,15 @@
     if (A.isBusy()) return;
     $('#draw-view').hidden = next !== 'draw';
     $('#guessr-view').hidden = next !== 'guessr';
+    $('#ranking-view').hidden = next !== 'ranking';
     document.querySelectorAll('[data-section]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.section === next)));
     if (next === 'guessr') {
       updateLocation(); render();
       if (guessrMode === 'daily' && !dailyView && !dailyLoading) loadDaily(selectedDate);
-    } else { try { history.replaceState(null, '', '#roletas'); } catch (error) { /* The active tab still works when history is unavailable. */ } }
+    } else {
+      if (next === 'ranking') window.SorteioAccount.renderRanking();
+      try { history.replaceState(null, '', next === 'ranking' ? '#ranking' : '#roletas'); } catch (error) { /* The active tab still works when history is unavailable. */ }
+    }
   }
   function score(value) { return value.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '/10'; }
   function formatDay(date, options = { day: 'numeric', month: 'short', year: 'numeric' }) {
@@ -69,10 +82,10 @@
   }
   function renderDailyPanel() {
     $('#daily-date-label').textContent = formatDay(selectedDate);
-    $('#daily-today').hidden = selectedDate === D.todayKey();
-    $('#daily-today').disabled = dailyLoading;
-    $('#daily-calendar-open').disabled = dailyLoading || !dailyDataset;
-    const streak = dailyState ? D.streak(dailyState, D.todayKey()) : { current: 0, best: 0 };
+    $('#daily-today').hidden = selectedDate === dailyToday();
+    $('#daily-today').disabled = dailyLoading || !!pendingCloud;
+    $('#daily-calendar-open').disabled = dailyLoading || !!pendingCloud || !dailyStart();
+    const streak = online ? cloudMeta ? cloudMeta.streak : { current: 0, best: 0 } : dailyState ? D.streak(dailyState, D.todayKey()) : { current: 0, best: 0 };
     $('#daily-streak').textContent = streak.current;
     $('#daily-streak-unit').textContent = streak.current === 1 ? 'dia' : 'dias';
     $('#daily-best').textContent = streak.best;
@@ -90,6 +103,12 @@
   }
   function render() {
     const daily = guessrMode === 'daily';
+    const gated = daily && online && !cloudReady();
+    $('#daily-login-gate').hidden = !gated;
+    const account = C.snapshot();
+    $('#daily-login-message').textContent = !account.configured ? 'O modo online ainda não foi configurado.' : !account.ready ? 'Conectando…' : account.member ? 'Troque a senha temporária para jogar.' : 'Entre para jogar o desafio diário.';
+    $('#daily-login-gate button').textContent = account.member ? 'Trocar senha' : 'Entrar';
+    $('#daily-login-gate button').hidden = !account.configured || !account.ready;
     const friends = daily && dailyDataset ? dailyDataset.friends : A.getFriends();
     const configured = friends.filter((friend) => friend.anilistUsername);
     const round = daily ? dailyView && dailyView.rounds[reviewIndex === null ? dailyView.index : reviewIndex] : game.round;
@@ -104,7 +123,8 @@
     $('#guessr-clear-score').hidden = daily;
     document.querySelectorAll('[data-guessr-mode]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.guessrMode === guessrMode)));
     if (daily) renderDailyPanel();
-    $('#guessr-mode').hidden = !preview;
+    $('#guessr-mode').hidden = !preview && !daily;
+    $('#guessr-mode').textContent = daily ? online ? 'Online' : 'Local' : 'Prévia';
     $('#guessr-score').textContent = daily ? summary.score : game.score;
     $('#guessr-wins').textContent = daily ? summary.wins + ' / 5' : game.stats.wins + ' / ' + game.stats.rounds;
     $('#guessr-attempts').textContent = round ? (round.finished ? 'Rodada encerrada' : (3 - round.guessedIds.length) + ((3 - round.guessedIds.length) === 1 ? ' tentativa' : ' tentativas')) : '3 tentativas';
@@ -114,15 +134,20 @@
     $('#guessr-notice').classList.toggle('is-error', daily ? dailyMessageIsError || !!dailyStorageMessage : messageIsError || !!storageMessage);
     $('#guessr-view').setAttribute('aria-busy', String(shownLoading));
     $('#guessr-next').disabled = daily ? dailyLoading || summary.completed || !reviewing && !!round && !round.finished : loading || !!round && !round.finished || !configured.length;
-    $('#guessr-next').hidden = daily ? summary.completed || !reviewing && !!round && !round.finished && !dailyLoading : !!round && !round.finished && !loading;
+    $('#guessr-next').hidden = gated || (daily ? !pendingCloud && (summary.completed || !reviewing && !!round && !round.finished && !dailyLoading) : !!round && !round.finished && !loading);
+    if (daily && pendingCloud && !dailyLoading) $('#guessr-next').disabled = false;
     $('#guessr-next').textContent = daily ? dailyLoading ? 'Carregando desafio…' : reviewing ? 'Continuar desafio' : dailyMessageIsError ? 'Tentar novamente' : round ? 'Próxima rodada' : 'Começar desafio' : loading ? progress || 'Carregando pistas…' : round && !round.finished ? 'Rodada em andamento' : round ? 'Próxima rodada' : messageIsError ? 'Tentar novamente' : 'Carregar pistas';
+    $('#guessr-toolbar').hidden = gated;
+    $('#guessr-clues').hidden = gated;
+    $('.guessr-answer-area').hidden = gated;
+    $('#daily-panel').hidden = !daily || gated;
     $('#guessr-clear-score').disabled = loading || !(game.score || game.stats.rounds || game.stats.misses || game.stats.previews);
     $('#guessr-clues').innerHTML = round ? round.clues.map((clue, i) => '<article class="guessr-clue"><div class="guessr-poster"><img src="' + html(clue.coverUrl || 'poster-placeholder.svg') + '" data-poster-url="' + html(clue.coverUrl || '') + '" alt="Capa de ' + html(clue.name) + '" loading="lazy" referrerpolicy="no-referrer"><span class="guessr-clue-number">0' + (i + 1) + '</span></div><div class="guessr-clue-info"><h2 title="' + html(clue.name) + '">' + html(clue.name) + '</h2><div class="guessr-clue-meta"><strong class="guessr-clue-score">★ ' + score(clue.score) + '</strong><span class="guessr-status status-' + clue.status.toLowerCase() + '">' + html(S.statusLabel(clue.status)) + '</span></div></div></article>').join('') : [1, 2, 3].map((i) => '<div class="guessr-clue guessr-placeholder" aria-hidden="true"><div class="guessr-poster"><span>0' + i + '</span></div><div class="guessr-clue-info"><strong>Anime ' + i + '</strong><small>Nota e status</small></div></div>').join('');
     const options = round ? round.options : friends;
     $('#guessr-options').innerHTML = options.map((friend) => {
       const guessed = !!round && round.guessedIds.includes(friend.id);
       const correct = !!round && round.finished && round.targetId === friend.id;
-      return '<button class="guessr-option' + (correct ? ' is-correct' : guessed ? ' is-wrong' : '') + '" data-guess="' + friend.id + '"' + (!round || round.finished || shownLoading || guessed ? ' disabled' : '') + ' aria-label="' + html(friend.name + (correct ? ', resposta correta' : guessed ? ', palpite incorreto' : '')) + '"><span>' + html(friend.name) + '</span>' + (correct ? '<span aria-hidden="true">✓</span>' : guessed ? '<span aria-hidden="true">×</span>' : '') + '</button>';
+      return '<button class="guessr-option' + (correct ? ' is-correct' : guessed ? ' is-wrong' : '') + '" data-guess="' + friend.id + '"' + (!round || round.finished || shownLoading || guessed || daily && pendingCloud ? ' disabled' : '') + ' aria-label="' + html(friend.name + (correct ? ', resposta correta' : guessed ? ', palpite incorreto' : '')) + '"><span>' + html(friend.name) + '</span>' + (correct ? '<span aria-hidden="true">✓</span>' : guessed ? '<span aria-hidden="true">×</span>' : '') + '</button>';
     }).join('');
     const feedback = $('#guessr-feedback');
     feedback.className = 'guessr-feedback' + (round && round.finished ? round.correct ? ' is-correct' : ' is-wrong' : '');
@@ -138,6 +163,7 @@
     } else { $('#guessr-reveal').removeAttribute('href'); $('#guessr-reveal').textContent = ''; }
   }
   async function loadDaily(date) {
+    if (online) { await loadCloudDaily(date); return; }
     if (dailyLoading) return;
     dailyLoading = true; dailyMessage = ''; dailyMessageIsError = false; render();
     try {
@@ -147,12 +173,14 @@
         try {
           const responses = await Promise.all([
             fetch('daily-data.json?v=2026-10-20-v1', { signal: controller.signal }),
-            fetch('daily-cap.json?v=2026-10-21-cap-v1', { signal: controller.signal })
+            fetch('daily-cap.json?v=2026-10-21-cap-v1', { signal: controller.signal }),
+            fetch('daily-kv.json?v=2026-10-21-cap-kv-v1', { signal: controller.signal })
           ]);
           if (responses.some((response) => !response.ok)) throw new Error('Não foi possível carregar a base dos desafios.');
-          const [original, cap] = await Promise.all(responses.map((response) => response.json()));
+          const [original, cap, kv] = await Promise.all(responses.map((response) => response.json()));
           if (cap.friendId !== 'daily_cap' || cap.name !== 'Cap' || !cap.username || cap.username.toLowerCase() !== 'capkiyo') throw new Error('O perfil de Cap nas pistas diárias é inválido.');
-          const updated = { ...original, id: '2026-10-21-cap-v1', startDate: '2026-10-21', profiles: original.profiles.concat(cap) };
+          if (kv.friendId !== 'daily_kv' || kv.name !== 'KV' || kv.username !== 'knvcria') throw new Error('O perfil de KV nas pistas diárias é inválido.');
+          const updated = { ...original, id: '2026-10-21-cap-kv-v1', startDate: '2026-10-21', profiles: original.profiles.concat(cap, kv) };
           const archive = { version: 1, startDate: original.startDate, friends: original.friends, editions: [
             { from: original.startDate, dataset: original },
             { from: updated.startDate, dataset: updated }
@@ -182,8 +210,10 @@
   }
   function nextDailyRound() {
     if (dailyLoading) return;
+    if (online && pendingCloud) { mutateCloud(pendingCloud); return; }
     if (!dailyView) { loadDaily(selectedDate); return; }
     if (reviewIndex !== null && reviewIndex !== dailyView.index) { reviewIndex = null; render(); return; }
+    if (online) { mutateCloud({ kind: 'next', date: selectedDate, index: dailyView.index }); return; }
     try {
       dailyView = D.nextRound(dailyState, selectedDate, dailyDataset, D.todayKey());
       reviewIndex = null; dailyMessage = ''; dailyMessageIsError = false;
@@ -191,28 +221,28 @@
     } catch (error) { dailyMessage = error.message; dailyMessageIsError = true; render(); }
   }
   function renderCalendar() {
-    const today = D.todayKey();
+    const today = dailyToday();
     const first = calendarMonth + '-01';
     const monthDate = new Date(first + 'T12:00:00Z');
     const monthLength = new Date(Date.UTC(monthDate.getUTCFullYear(), monthDate.getUTCMonth() + 1, 0)).getUTCDate();
     const offset = (monthDate.getUTCDay() + 6) % 7;
     $('#daily-calendar-month').textContent = formatDay(first, { month: 'long', year: 'numeric' });
-    $('#daily-month-prev').disabled = !dailyDataset || calendarMonth <= dailyDataset.startDate.slice(0, 7);
+    $('#daily-month-prev').disabled = !dailyStart() || calendarMonth <= dailyStart().slice(0, 7);
     $('#daily-month-next').disabled = calendarMonth >= today.slice(0, 7);
     let cells = '<span class="daily-calendar-pad" aria-hidden="true"></span>'.repeat(offset);
     for (let number = 1; number <= monthLength; number++) {
       const date = calendarMonth + '-' + String(number).padStart(2, '0');
-      const entry = dailyState && dailyState.days[date];
+      const entry = online ? cloudMeta && cloudMeta.days.find((item) => item.date === date) : dailyState && dailyState.days[date];
       const complete = !!entry && entry.completed;
-      const started = !!entry && entry.guesses.some((guesses) => guesses.length);
-      const disabled = !dailyDataset || date < dailyDataset.startDate || date > today;
+      const started = !!entry && (online ? entry.started : entry.guesses.some((guesses) => guesses.length));
+      const disabled = !dailyStart() || date < dailyStart() || date > today;
       const label = formatDay(date, { day: 'numeric', month: 'long', year: 'numeric' }) + (complete ? ', concluído' : started ? ', em andamento' : '') + (date === today ? ', hoje' : '');
       cells += '<button class="daily-day' + (complete ? ' is-complete' : started ? ' is-progress' : '') + (date === selectedDate ? ' is-selected' : '') + (date === today ? ' is-today' : '') + '" data-daily-date="' + date + '" aria-label="' + html(label) + '" aria-pressed="' + String(date === selectedDate) + '"' + (disabled ? ' disabled' : '') + '>' + number + '</button>';
     }
     $('#daily-calendar-grid').innerHTML = cells;
   }
   function openCalendar() {
-    if (!dailyDataset || dailyLoading) return;
+    if (!dailyStart() || dailyLoading || pendingCloud) return;
     calendarMonth = selectedDate.slice(0, 7); renderCalendar();
     $('#daily-calendar-dialog').showModal();
   }
@@ -220,7 +250,7 @@
     const current = new Date(calendarMonth + '-01T12:00:00Z');
     current.setUTCMonth(current.getUTCMonth() + delta);
     const next = current.toISOString().slice(0, 7);
-    if (next < dailyDataset.startDate.slice(0, 7) || next > D.todayKey().slice(0, 7)) return;
+    if (next < dailyStart().slice(0, 7) || next > dailyToday().slice(0, 7)) return;
     calendarMonth = next; renderCalendar();
   }
   async function nextRound() {
@@ -285,8 +315,8 @@
     if (guessrMode === 'daily' && !dailyView && !dailyLoading) loadDaily(selectedDate);
   }));
   $('#daily-calendar-open').addEventListener('click', openCalendar);
-  $('#daily-today').addEventListener('click', () => loadDaily(D.todayKey()));
-  $('#daily-calendar-today').addEventListener('click', () => { $('#daily-calendar-dialog').close(); loadDaily(D.todayKey()); });
+  $('#daily-today').addEventListener('click', () => loadDaily(dailyToday()));
+  $('#daily-calendar-today').addEventListener('click', () => { $('#daily-calendar-dialog').close(); loadDaily(dailyToday()); });
   $('#daily-month-prev').addEventListener('click', () => moveCalendar(-1));
   $('#daily-month-next').addEventListener('click', () => moveCalendar(1));
   $('#daily-calendar-grid').addEventListener('click', (event) => {
@@ -307,6 +337,7 @@
     if (!button || button.disabled || (guessrMode === 'daily' ? dailyLoading : loading)) return;
     if (guessrMode === 'daily') {
       if (!dailyView || reviewIndex !== null && reviewIndex !== dailyView.index) return;
+      if (online) { mutateCloud({ kind: 'guess', date: selectedDate, index: dailyView.index, friendId: button.dataset.guess }); return; }
       try {
         const result = D.submitGuess(dailyState, selectedDate, button.dataset.guess, dailyDataset, D.todayKey());
         dailyView = result.day; dailyMessage = ''; dailyMessageIsError = false;
@@ -333,15 +364,75 @@
     if (guessrMode === 'free') render();
   });
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && guessrMode === 'daily') render();
+    if (!document.hidden && guessrMode === 'daily') {
+      if (online && cloudReady()) loadDaily(selectedDate);
+      else render();
+    }
   });
   let observedToday = D.todayKey();
   setInterval(() => {
     const today = D.todayKey();
     if (today === observedToday) return;
     observedToday = today;
-    if (guessrMode === 'daily') render();
+    if (guessrMode === 'daily') {
+      if (online && cloudReady()) loadDaily(selectedDate);
+      else render();
+    }
   }, 60000);
+  function acceptCloud(response) {
+    const wasCompleted = dailyView && dailyView.completed;
+    cloudMeta = response; dailyView = response.day; selectedDate = response.day.date;
+    reviewIndex = null; calendarMonth = selectedDate.slice(0, 7);
+    dailyMessage = ''; dailyMessageIsError = false;
+    if (guessrMode === 'daily' && !$('#guessr-view').hidden) updateLocation();
+    if (dailyView.completed && !wasCompleted) document.dispatchEvent(new CustomEvent('sorteio:daily-completed'));
+  }
+  async function loadCloudDaily(date) {
+    if (dailyLoading || !cloudReady()) { render(); return; }
+    if (pendingCloud) { await mutateCloud(pendingCloud); return; }
+    const generation = cloudGeneration;
+    dailyLoading = true; dailyMessage = ''; dailyMessageIsError = false; render();
+    try {
+      let response;
+      try { response = await C.getDay(date); }
+      catch (error) {
+        if (!cloudMeta && ['cloud/failed-precondition', 'cloud/invalid-argument'].includes(error.code)) response = await C.getDay();
+        else throw error;
+      }
+      if (generation === cloudGeneration) acceptCloud(response);
+    } catch (error) { if (generation === cloudGeneration) { dailyMessage = error.message; dailyMessageIsError = true; } }
+    finally { if (generation === cloudGeneration) { dailyLoading = false; render(); } }
+  }
+  async function mutateCloud(action) {
+    if (dailyLoading || !cloudReady()) return;
+    const generation = cloudGeneration;
+    const request = action.id ? action : { ...action, id: crypto.randomUUID(), uid: cloudUid };
+    if (request.uid !== cloudUid) return;
+    pendingCloud = request;
+    dailyLoading = true; dailyMessage = ''; dailyMessageIsError = false; render();
+    try {
+      const response = request.kind === 'guess' ? await C.guess(request.date, request.friendId, request.index, request.id) : await C.next(request.date, request.index, request.id);
+      if (generation === cloudGeneration) { pendingCloud = null; acceptCloud(response); }
+    } catch (error) {
+      if (generation !== cloudGeneration) return;
+      try {
+        const response = await C.getDay(request.date);
+        if (generation !== cloudGeneration) return;
+        pendingCloud = null; acceptCloud(response);
+        dailyMessage = error.message + ' O progresso foi atualizado.';
+      } catch (refreshError) { dailyMessage = error.message + ' Tente novamente para recuperar o progresso.'; }
+      dailyMessageIsError = true;
+    } finally { if (generation === cloudGeneration) { dailyLoading = false; render(); } }
+  }
+  if (online) C.subscribe((snapshot) => {
+    const uid = snapshot.member && !snapshot.member.mustChangePassword ? snapshot.member.uid : null;
+    if (uid !== cloudUid) {
+      cloudUid = uid; cloudGeneration++; dailyView = null; cloudMeta = null; dailyLoading = false; pendingCloud = null;
+      reviewIndex = null; dailyMessage = ''; dailyMessageIsError = false;
+      if (uid && guessrMode === 'daily' && !$('#guessr-view').hidden) loadDaily(selectedDate);
+    }
+    render();
+  });
   render();
-  setSection(location.hash.startsWith('#guessr') ? 'guessr' : 'draw');
+  setSection(location.hash.startsWith('#ranking') ? 'ranking' : location.hash.startsWith('#guessr') ? 'guessr' : 'draw');
 })();
