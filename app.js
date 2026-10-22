@@ -35,6 +35,8 @@
   let ratingController;
   let ratingSignature = '';
   let groupLoaded = false;
+  let specialFormKey = '';
+  const specialTypes = new Set(['swap_result', 'mutual', 'king', 'free_pick']);
   const failedCovers = new Set();
   const degrees = { friends: 0, cards: 0, anime: 0 };
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -115,11 +117,14 @@
     const panel = $('#card-effect');
     const controls = $('#card-effect-controls');
     const message = $('#card-effect-message');
+    if (!specialTypes.has(type) || !state.current.friend) specialFormKey = '';
     panel.hidden = !state.current.card || type === 'none';
     controls.hidden = true;
+    $('#special-card-controls').hidden = true;
     if (panel.hidden) return;
     if (type === 'infernal') { message.textContent = 'Os quatro animes entram na roleta depois de confirmar o seu anime.'; return; }
     if (!state.current.friend) { message.textContent = 'Sorteie um nome para usar esta carta.'; return; }
+    if (specialTypes.has(type)) { renderSpecialCardEffect(C.specialEffectInfo(state)); return; }
     if (!info.pending) {
       const removed = info.excludedAnimeIds.map((id) => state.anime.find((anime) => anime.id === id)).filter(Boolean);
       message.textContent = removed.length ? 'Fora só nesta vez: ' + removed.map((anime) => anime.name).join(', ') + '.' : 'Efeito dispensado nesta vez.';
@@ -147,10 +152,73 @@
     $('#apply-card-effect').textContent = state.current.anime ? 'Aplicar' : 'Aplicar e girar';
     $('#skip-card-effect').disabled = busy;
   }
+  function setSpecialOptions(select, options, emptyLabel, selected) {
+    const previous = selected === undefined ? select.value : selected;
+    select.innerHTML = '<option value="">' + html(emptyLabel) + '</option>' + options.map((item) => '<option value="' + html(item.id) + '">' + html(item.label || item.name) + '</option>').join('');
+    if (options.some((item) => item.id === previous)) select.value = previous;
+  }
+  function specialInputReady(info = C.specialEffectInfo(state)) {
+    if (busy || info.resolved || !state.current.friend) return false;
+    if (info.type === 'swap_result') return !!state.current.anime && !!$('#special-friend').value;
+    if (info.type === 'mutual') return !!$('#special-friend').value;
+    if (info.type === 'king') return info.candidates.anime.length > 1 && !!$('#special-friend').value && !!$('#special-anime').value;
+    return info.type === 'free_pick' && !!$('#special-title').value.trim();
+  }
+  function renderSpecialCardEffect(info) {
+    const { type, resolved, draft, candidates } = info;
+    const form = $('#special-card-controls');
+    const message = $('#card-effect-message');
+    const friendSelect = $('#special-friend');
+    const animeSelect = $('#special-anime');
+    const contextKey = state.current.friend.id + ':' + state.current.card.id + ':' + type;
+    if (specialFormKey !== contextKey) {
+      specialFormKey = contextKey;
+      friendSelect.value = ''; animeSelect.value = ''; $('#special-title').value = '';
+    }
+    const readyToChoose = type !== 'swap_result' || !!state.current.anime;
+    form.hidden = !readyToChoose;
+    if (!readyToChoose) { message.textContent = 'Gire o anime. Depois, você pode manter ou trocar com alguém que já roletou.'; return; }
+    const targets = type === 'swap_result' ? candidates.records.map((record) => ({ id: record.id, label: record.friend.name + ' — ' + record.anime.name })) : candidates.friends.map((friend) => {
+      const record = C.cycleRecords(state).find((row) => row.friend.id === friend.id);
+      return { id: friend.id, label: friend.name + (type === 'mutual' && record ? ' · já roletou' : '') };
+    });
+    $('#special-friend-field').hidden = type === 'free_pick';
+    $('#special-anime-field').hidden = type !== 'king' && type !== 'free_pick';
+    $('#special-title-field').hidden = type !== 'free_pick';
+    $('#special-friend-label').textContent = type === 'swap_result' ? 'Trocar com quem?' : type === 'king' ? 'Colega que ainda não roletou' : 'Colega para assistir junto';
+    $('#special-anime-label').textContent = type === 'free_pick' ? 'Da roleta (opcional)' : 'Anime para esse colega';
+    const selectedTarget = resolved && draft ? type === 'swap_result' ? draft.recordId : draft.friendId : undefined;
+    setSpecialOptions(friendSelect, targets, 'Selecione um colega…', selectedTarget);
+    setSpecialOptions(animeSelect, candidates.anime, type === 'free_pick' ? 'Digitar outro título…' : 'Selecione um anime…', resolved && draft ? draft.animeId : undefined);
+    if (type === 'free_pick' && resolved && draft) $('#special-title').value = draft.name || info.forcedAnime?.name || '';
+    friendSelect.disabled = busy || resolved || !targets.length;
+    animeSelect.disabled = busy || resolved || !candidates.anime.length;
+    $('#special-title').disabled = busy || resolved;
+    const friend = targets.find((item) => item.id === friendSelect.value);
+    const chosenAnime = candidates.anime.find((item) => item.id === animeSelect.value);
+    if (resolved) {
+      if (type === 'swap_result') message.textContent = draft?.recordId ? 'Troca com ' + (friend?.label || 'o colega escolhido') + '. Confirme o resultado para efetivar.' : 'Você vai manter o anime sorteado. Confirme o resultado.';
+      else if (type === 'mutual') message.textContent = draft?.friendId ? 'Você e ' + (friend?.label.replace(' · já roletou', '') || 'o colega escolhido') + ' vão assistir Rent a Girlfriend em call. Confirme para registrar os dois.' : 'Sem outro colega disponível. Continue o sorteio normalmente.';
+      else if (type === 'king') message.textContent = draft?.friendId ? (friend?.label || 'O colega escolhido') + ' fica com ' + (chosenAnime?.name || 'o anime escolhido') + '. Agora sorteie o seu anime e confirme os dois.' : 'Sem opções para aplicar a carta. Continue seu sorteio.';
+      else message.textContent = 'Escolha livre: ' + (info.forcedAnime?.name || draft?.name || '') + '. Confirme para registrar.';
+    } else if (type === 'swap_result') message.textContent = targets.length ? 'Escolha com quem trocar ou mantenha o seu anime.' : 'Ninguém roletou antes de você. Mantenha o anime sorteado para continuar.';
+    else if (type === 'mutual') message.textContent = targets.length ? 'Escolha um colega. Os dois ficam com Rent a Girlfriend, mesmo que ele já tenha roletado.' : 'Não há outro colega disponível para assistir junto.';
+    else if (type === 'king') message.textContent = targets.length && candidates.anime.length > 1 ? 'Defina o anime de outro colega. Depois, você sorteia o seu.' : 'É preciso outro colega sem resultado e dois animes disponíveis para usar esta carta.';
+    else message.textContent = 'Escolha da roleta ou digite qualquer anime, filme ou OVA. Não precisa girar.';
+    $('#apply-special-effect').hidden = resolved;
+    $('#apply-special-effect').disabled = !specialInputReady(info);
+    $('#apply-special-effect').textContent = type === 'swap_result' ? 'Trocar animes' : type === 'mutual' ? 'Definir para os dois' : type === 'king' ? 'Escolher e girar o meu' : 'Usar esse título';
+    $('#skip-special-effect').hidden = resolved || !info.canSkip;
+    $('#skip-special-effect').disabled = busy;
+    $('#skip-special-effect').textContent = type === 'swap_result' ? 'Manter meu anime' : 'Continuar sem efeito';
+    $('#reset-special-effect').hidden = !resolved;
+    $('#reset-special-effect').disabled = busy;
+  }
   function syncAnimeDetails() {
     const anime = state.current.anime;
+    const catalogued = !!anime && state.anime.some((item) => item.id === anime.id);
     const signature = anime ? JSON.stringify([anime.id, anime.malId, state.friends.map((item) => [item.id, item.name, item.anilistUsername])]) : '';
-    $('#anime-details').hidden = !anime;
+    $('#anime-details').hidden = !anime || (!anime.malId && !catalogued);
     $('#group-ratings').hidden = !anime || !anime.malId || !state.friends.length;
     if (!anime) {
       if (ratingController) ratingController.abort();
@@ -169,12 +237,12 @@
     $('#anime-mal-link').hidden = !anime.malId;
     $('#anime-mal-link').href = anime.malId ? 'https://myanimelist.net/anime/' + anime.malId : 'https://myanimelist.net/';
     $('#anime-mal-score').textContent = anime.malId ? '★ ' + scoreText(anime.malScore) + ' · MAL' : 'Sem dados do MAL';
-    $('#link-current-anime').hidden = !!anime.malId;
+    $('#link-current-anime').hidden = !!anime.malId || !catalogued;
     $('#link-current-anime').disabled = busy;
     const owner = state.friends.find((item) => item.id === anime.ownerId);
     $('#anime-owner').textContent = owner ? 'Indicado por ' + owner.name : '';
     $('#anime-owner').hidden = !owner;
-    $('#anime-rating-hint').hidden = !!anime.malId;
+    $('#anime-rating-hint').hidden = !!anime.malId || !catalogued;
     if (signature === ratingSignature) return;
     if (ratingController) ratingController.abort();
     ratingController = new AbortController();
@@ -306,26 +374,41 @@
       result.innerHTML = '<strong>' + (hasEntries ? 'Fim do ciclo' : 'Sem opções') + '</strong>';
     } else result.innerHTML = '<strong aria-label="Nenhum resultado">—</strong>';
   }
+  function drawInfo() {
+    const basic = C.effectInfo(state);
+    const special = C.specialEffectInfo(state);
+    return { ...basic, pending: basic.pending || special.pending, canSpinAnime: special.canSpinAnime, canConfirm: special.canConfirm };
+  }
+  function focusDrawAction() {
+    const info = drawInfo();
+    let target;
+    if (info.pending && specialTypes.has(info.type)) {
+      target = info.type === 'free_pick' ? $('#special-title') : $('#special-friend').disabled ? $('#skip-special-effect') : $('#special-friend');
+    } else if (info.pending) target = $('#card-effect-target').disabled ? $('#skip-card-effect') : $('#card-effect-target');
+    else target = info.canConfirm ? $('#confirm-anime') : $('#draw-round').disabled ? $('#reset-cycle') : $('#draw-round');
+    if (target && !target.hidden && !target.disabled) target.focus({ preventScroll: true });
+  }
   function renderControls() {
     C.prepareTurnEffect(state);
-    const effect = C.effectInfo(state);
+    const effect = drawInfo();
     const filled = Object.values(state.current).filter(Boolean).length;
-    const ready = filled === 3 && !effect.pending;
+    const ready = filled === 3 && !effect.pending && effect.canConfirm;
     const main = $('#draw-round');
     $('.draw-actions').hidden = ready || effect.pending;
-    main.disabled = busy || ready || effect.pending || ['friends', 'cards', 'anime'].some((key) => !state.current[keyMap[key]] && !C.available(state, key).length);
+    main.disabled = busy || ready || effect.pending || ['friends', 'cards'].some((key) => !state.current[keyMap[key]] && !C.available(state, key).length) || (!!state.current.friend && !!state.current.card && effect.canSpinAnime && !state.current.anime && !C.available(state, 'anime').length);
     main.innerHTML = icon(busy ? 'refresh' : 'dice') + (busy ? ' Girando…' : filled && !ready ? ' Completar' : ' Girar tudo');
-    $$('[data-spin]').forEach((button) => button.disabled = busy || (ready && button.dataset.spin !== 'anime') || (effect.pending && button.dataset.spin === 'anime') || !C.available(state, button.dataset.spin).length);
+    $$('[data-spin]').forEach((button) => button.disabled = busy || (ready && button.dataset.spin !== 'anime') || ((effect.pending || !effect.canSpinAnime) && button.dataset.spin === 'anime') || !C.available(state, button.dataset.spin).length);
     $$('[data-shuffle]').forEach((button) => button.disabled = busy || C.available(state, button.dataset.shuffle).length < 2);
     $$('[data-edit], [data-view], #manage-all, [data-delete-result]').forEach((button) => button.disabled = busy);
     $$('[data-section]').forEach((button) => button.disabled = busy);
     $('#reset-cycle').disabled = busy || !(state.used.friends.length || state.used.anime.length || C.cycleRecords(state).length || filled);
     $('#anime-decision').hidden = !state.current.anime;
-    $('#spin-anime').hidden = !!state.current.anime;
+    $('#spin-anime').hidden = !!state.current.anime || !effect.canSpinAnime;
     $('#confirm-anime').disabled = busy || !ready;
-    $('#reject-anime').disabled = busy || effect.pending || !state.current.anime;
-    $('#anime-confirm-hint').hidden = !state.current.anime || ready || busy;
-    $('#anime-confirm-hint').textContent = effect.pending ? 'Resolva a carta antes de confirmar.' : 'Sorteie também o nome e a carta.';
+    $('#reject-anime').hidden = !effect.canSpinAnime;
+    $('#reject-anime').disabled = busy || effect.pending || !state.current.anime || !effect.canSpinAnime;
+    $('#anime-confirm-hint').hidden = ready || busy || (!state.current.anime && effect.canSpinAnime && !effect.pending);
+    $('#anime-confirm-hint').textContent = effect.pending ? 'Resolva a carta antes de confirmar.' : !effect.canSpinAnime ? 'Defina o anime nas opções da carta.' : 'Sorteie também o nome e a carta.';
     $('#sound-toggle').setAttribute('aria-pressed', String(state.settings.sound));
     $('#sound-toggle').setAttribute('aria-label', state.settings.sound ? 'Desativar som' : 'Ativar som');
     $('#sound-toggle').title = state.settings.sound ? 'Desativar som' : 'Ativar som';
@@ -340,14 +423,15 @@
     $('#history-total').textContent = records.length + (records.length === 1 ? ' resultado' : ' resultados');
     $('#clear-history').disabled = busy || !records.length;
     $('#copy-history').disabled = !records.length;
-    $('#history-list').innerHTML = records.length ? '<div class="history-table"><div class="history-head"><span>NOME</span><span>ANIME</span><span>CARTA</span><span>DATA</span></div>' + records.map((record) => '<div class="history-row"><div class="recent-person">' + avatar(record.friend) + '<strong>' + html(record.friend.name) + '</strong></div><div class="history-anime"><strong>' + html(record.anime.name) + '</strong></div><div><span class="history-card">' + html(record.card.name) + '</span><small class="history-effect">' + html(record.card.description) + '</small></div><time datetime="' + record.at + '">' + displayDate(record.at) + '</time></div>').join('') + '</div>' : emptyState('Nenhum resultado salvo.', 'Sorteie e confirme o anime para registrar um resultado.', 'clock');
+    $('#history-list').innerHTML = records.length ? '<div class="history-table"><div class="history-head"><span>NOME</span><span>ANIME</span><span>CARTA</span><span>DATA</span></div>' + records.map((record) => '<div class="history-row"><div class="recent-person">' + avatar(record.friend) + '<strong>' + html(record.friend.name) + '</strong></div><div class="history-anime"><strong>' + html(record.anime.name) + '</strong></div><div><span class="history-card">' + html(record.card.name) + '</span><small class="history-effect">' + html(effectDescription(record)) + '</small></div><time datetime="' + record.at + '">' + displayDate(record.at) + '</time></div>').join('') + '</div>' : emptyState('Nenhum resultado salvo.', 'Sorteie e confirme o anime para registrar um resultado.', 'clock');
   }
+  function effectDescription(record) { return record.effectNote || record.card.description || record.card.name; }
   function resultLine(record) {
-    return record.friend.name + ' — ' + record.anime.name + ' (' + (record.card.description || record.card.name) + ')';
+    return record.friend.name + ' — ' + record.anime.name + ' (' + effectDescription(record) + ')';
   }
   function renderCycleResults() {
     const records = C.cycleRecords(state);
-    $('#round-results-list').innerHTML = records.map((record) => '<li class="round-result" data-result-id="' + record.id + '"><div class="round-result-text"><strong class="result-friend">' + html(record.friend.name) + '</strong> — <span class="result-anime">' + html(record.anime.name) + '</span> <span class="result-effect">(' + html(record.card.description || record.card.name) + ')</span></div><button class="icon-button delete-result" data-delete-result="' + record.id + '" aria-label="Excluir resultado de ' + html(record.friend.name) + '" title="Excluir resultado"' + (busy ? ' disabled' : '') + '>' + icon('trash') + '</button></li>').join('');
+    $('#round-results-list').innerHTML = records.map((record) => '<li class="round-result" data-result-id="' + record.id + '"><div class="round-result-text"><strong class="result-friend">' + html(record.friend.name) + '</strong> — <span class="result-anime">' + html(record.anime.name) + '</span> <span class="result-effect">(' + html(effectDescription(record)) + ')</span></div><button class="icon-button delete-result" data-delete-result="' + record.id + '" aria-label="Excluir resultado de ' + html(record.friend.name) + '" title="Excluir resultado"' + (busy ? ' disabled' : '') + '>' + icon('trash') + '</button></li>').join('');
     $('#results-progress').textContent = records.length + ' / ' + state.friends.length;
     $('#results-empty').hidden = !!records.length;
     $('#copy-results').disabled = !records.length || busy;
@@ -377,7 +461,7 @@
   function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
   async function animateSpin(key, excludedAnimeId) {
     C.prepareTurnEffect(state);
-    if (key === 'anime' && C.effectInfo(state).pending) throw new Error('Escolha o efeito da carta antes de girar o anime.');
+    if (key === 'anime' && (drawInfo().pending || !drawInfo().canSpinAnime)) throw new Error('Defina o anime nas opções da carta antes de continuar.');
     const pool = C.available(state, key);
     const choice = C.pick(state, key, key === 'anime' ? excludedAnimeId : undefined);
     if (!choice) throw new Error(excludedAnimeId ? 'Não há outro anime disponível. Adicione outro anime ou gire novamente.' : 'Esta roleta ficou sem opções. Adicione itens ou limpe os resultados para iniciar outro ciclo.');
@@ -416,13 +500,13 @@
     try {
       for (const key of keys) {
         C.prepareTurnEffect(state);
-        if (key === 'anime' && C.effectInfo(state).pending) break;
+        if (key === 'anime' && (drawInfo().pending || !drawInfo().canSpinAnime)) break;
         await animateSpin(key, excludedAnimeId); renderControls();
       }
     } catch (error) { toast(error.message, true); }
     finally {
       busy = false; document.body.removeAttribute('aria-busy'); renderAll();
-      (C.effectInfo(state).pending ? $('#card-effect-target').disabled ? $('#skip-card-effect') : $('#card-effect-target') : Object.values(state.current).every(Boolean) ? $('#confirm-anime') : $('#draw-round').disabled ? $('#reset-cycle') : $('#draw-round')).focus({ preventScroll: true });
+      focusDrawAction();
     }
   }
   function confetti() {
@@ -501,7 +585,8 @@
     ['friends', 'cards', 'anime'].forEach((key) => {
       const selected = state.current[keyMap[key]];
       if (!selected) return;
-      const valid = C.available(state, key).find((item) => item.id === selected.id);
+      const forced = key === 'anime' ? C.specialEffectInfo(state).forcedAnime : null;
+      const valid = forced && forced.id === selected.id ? forced : C.available(state, key).find((item) => item.id === selected.id);
       state.current[keyMap[key]] = valid ? { ...valid } : null;
     });
     C.prepareTurnEffect(state);
@@ -599,6 +684,41 @@
   $('#card-effect-target').addEventListener('change', () => $('#apply-card-effect').disabled = busy || !$('#card-effect-target').value);
   $('#apply-card-effect').addEventListener('click', () => { const targetId = $('#card-effect-target').value; if (targetId) useCardEffect(targetId); });
   $('#skip-card-effect').addEventListener('click', () => useCardEffect(null));
+  function applySpecialChoice(skip = false) {
+    if (busy) return;
+    const info = C.specialEffectInfo(state);
+    let payload = null;
+    if (info.type === 'swap_result') payload = { recordId: skip ? null : $('#special-friend').value };
+    else if (!skip && info.type === 'mutual') payload = { friendId: $('#special-friend').value };
+    else if (!skip && info.type === 'king') payload = { friendId: $('#special-friend').value, animeId: $('#special-anime').value };
+    else if (!skip && info.type === 'free_pick') payload = { name: $('#special-title').value.trim(), animeId: $('#special-anime').value || null };
+    try {
+      C.applySpecialEffect(state, payload);
+      persist(); renderAll();
+      if (C.specialEffectInfo(state).canSpinAnime && !state.current.anime && C.available(state, 'anime').length) runSpins(['anime']);
+      else focusDrawAction();
+    } catch (error) { toast(error.message, true); }
+  }
+  $('#apply-special-effect').addEventListener('click', () => applySpecialChoice());
+  $('#skip-special-effect').addEventListener('click', () => applySpecialChoice(true));
+  $('#reset-special-effect').addEventListener('click', () => {
+    if (busy) return;
+    try { C.resetSpecialEffect(state); persist(); renderAll(); focusDrawAction(); }
+    catch (error) { toast(error.message, true); }
+  });
+  $('#special-friend').addEventListener('change', () => $('#apply-special-effect').disabled = !specialInputReady());
+  $('#special-anime').addEventListener('change', () => {
+    if (C.specialEffectInfo(state).type === 'free_pick') {
+      const choice = state.anime.find((anime) => anime.id === $('#special-anime').value);
+      if (choice) $('#special-title').value = choice.name;
+    }
+    $('#apply-special-effect').disabled = !specialInputReady();
+  });
+  $('#special-title').addEventListener('input', () => {
+    const selected = state.anime.find((anime) => anime.id === $('#special-anime').value);
+    if (selected && $('#special-title').value !== selected.name) $('#special-anime').value = '';
+    $('#apply-special-effect').disabled = !specialInputReady();
+  });
   $$('[data-spin]').forEach((button) => button.addEventListener('click', () => runSpins([button.dataset.spin])));
   $$('[data-shuffle]').forEach((button) => button.addEventListener('click', () => {
     if (busy) return;
@@ -608,7 +728,7 @@
     toast({ friends: 'Nomes embaralhados.', cards: 'Cartas embaralhadas.', anime: 'Animes embaralhados.' }[key]);
   }));
   $('#confirm-anime').addEventListener('click', () => {
-    if (busy || !Object.values(state.current).every(Boolean)) return;
+    if (busy || !drawInfo().canConfirm || drawInfo().pending) return;
     try {
       const record = C.commitRound(state);
       persist(); renderAll();
@@ -617,7 +737,7 @@
       if (finished) confetti();
       const animeExhausted = !C.available(state, 'anime').length;
       const added = record.addedInfernalAnime || [];
-      toast(added.length ? 'Resultado confirmado. Infernizar adicionou ' + added.length + (added.length === 1 ? ' anime.' : ' animes.') : record.card.effect === 'infernal' ? 'Resultado confirmado. Os quatro animes já estavam cadastrados.' : finished ? 'Todos já foram sorteados.' : animeExhausted ? 'Resultado confirmado. Adicione mais animes para continuar.' : 'Resultado confirmado.');
+      toast(added.length ? 'Resultado confirmado. Infernizar adicionou ' + added.length + (added.length === 1 ? ' anime.' : ' animes.') : record.card.effect === 'infernal' ? 'Resultado confirmado. Os quatro animes já estavam cadastrados.' : record.card.effect === 'mutual' && record.relatedRoundIds?.length ? 'Resultados confirmados. Assistam Rent a Girlfriend juntos em call.' : record.card.effect === 'king' && record.relatedRoundIds?.length ? 'Os dois resultados foram confirmados.' : finished ? 'Todos já foram sorteados.' : animeExhausted ? 'Resultado confirmado. Adicione mais animes para continuar.' : 'Resultado confirmado.');
       ($('#draw-round').disabled ? $('#reset-cycle') : $('#draw-round')).focus({ preventScroll: true });
     } catch (error) { toast(error.message, true); }
   });
@@ -633,7 +753,9 @@
     if (!button || busy) return;
     const record = C.cycleRecords(state).find((item) => item.id === button.dataset.deleteResult);
     if (!record) return;
-    confirmAction('Excluir resultado de ' + record.friend.name + '?', 'Esta atribuição será removida. O nome e o anime voltam às roletas se ainda estiverem cadastrados.' + ((record.addedInfernalAnime || []).length ? ' Animes adicionados por esta carta também sairão se ainda não foram usados, alterados ou escolhidos em outra rodada.' : ''), () => {
+    const removal = C.removalInfo(state, record.id);
+    const linked = removal.count > 1 || specialTypes.has(record.card.effect) || !!record.effectNote;
+    confirmAction('Excluir resultado de ' + record.friend.name + '?', (removal.count > 1 ? 'Serão desfeitos ' + removal.count + ' resultados ligados a esta carta. ' : 'Esta atribuição será removida. ') + 'Opções que ficarem livres voltam às roletas se ainda estiverem cadastradas.' + (linked ? ' Trocas e atribuições vinculadas também serão desfeitas, restaurando os resultados anteriores quando houver.' : '') + ((record.addedInfernalAnime || []).length ? ' Animes adicionados por esta carta também sairão se ainda não foram usados, alterados ou escolhidos em outra rodada.' : ''), () => {
       C.removeRound(state, record.id);
       persist(); renderAll();
       toast('Resultado excluído.');
@@ -692,7 +814,7 @@
   }, true);
   $('#retry-group-ratings').addEventListener('click', () => { groupLoaded = false; loadGroupRatings(); });
   $('#link-current-anime').addEventListener('click', () => {
-    if (busy || !state.current.anime) return;
+    if (busy || !state.current.anime || !state.anime.some((item) => item.id === state.current.anime.id)) return;
     const id = state.current.anime.id;
     openEditor('anime'); editEntry(id); searchAnimeCatalog();
   });
@@ -718,7 +840,7 @@
   $('#export-data').addEventListener('click', downloadData);
   $('#import-data').addEventListener('click', () => $('#import-file').click());
   $('#import-file').addEventListener('change', importFile);
-  $('#clear-history').addEventListener('click', () => confirmAction('Limpar o histórico?', 'O histórico e os resultados abaixo serão apagados. Nomes e animes já sorteados continuam fora das roletas até reiniciar o ciclo. Exporte os dados antes se quiser guardá-los.', () => { state.history = []; state.cycleRoundIds = []; persist(); renderHistory(); renderCycleResults(); toast('Histórico limpo.'); }, 'Limpar histórico'));
+  $('#clear-history').addEventListener('click', () => confirmAction('Limpar o histórico?', 'O histórico e os resultados abaixo serão apagados. Nomes e animes já sorteados continuam fora das roletas até reiniciar o ciclo. Exporte os dados antes se quiser guardá-los.', () => { state.history = []; state.cycleRoundIds = []; reconcileCurrent(); persist(); renderAll(); toast('Histórico limpo.'); }, 'Limpar histórico'));
   async function copyText(text) {
     try { await navigator.clipboard.writeText(text); toast('Resultados copiados! É só colar no grupo.'); }
     catch (error) {

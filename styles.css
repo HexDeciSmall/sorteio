@@ -137,7 +137,10 @@ svg use[href="#i-star"] { stroke: none; }
 .card-effect { margin: 0 0 12px; padding: 12px; border: 1px solid #5b4c31; border-radius: 8px; background: #2a261f; color: #d7c8a6; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
 .card-effect p { margin: 0; }
 .card-effect .form-label { margin-top: 10px; font-size: 12px; }
-.card-effect .form-label select { width: 100%; min-width: 0; font-size: 12px; }
+.card-effect .form-label select, .card-effect .form-label input { width: 100%; min-width: 0; font-size: 12px; }
+.card-effect .form-label select { text-overflow: ellipsis; }
+#special-card-controls { min-width: 0; }
+#special-title { min-height: 42px; }
 .card-effect-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
 .card-effect-actions .button { flex: 1 1 auto; min-width: 0; padding: 10px; font-size: 12px; }
 .card-effect-actions .text-button { flex: 0 0 auto; font-size: 12px; }

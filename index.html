@@ -7,15 +7,15 @@
   <meta name="description" content="Roletas de nomes, cartas e animes para sortear entre amigos.">
   <title>Sorteio</title>
   <link rel="icon" href="favicon.svg?v=mini-20261020" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=mini-20261020">
+  <link rel="stylesheet" href="styles.css?v=cartas-20261021">
   <link rel="stylesheet" href="mini.css?v=dicas-20261021">
-  <script src="core.js?v=mini-20261020" defer></script>
+  <script src="core.js?v=cartas-20261021" defer></script>
   <script src="catalog.js?v=mini-20261020" defer></script>
   <script src="guessr-core.js?v=mini-20261020" defer></script>
   <script src="daily-core.js?v=mini-20261020" defer></script>
   <script src="spark-core.js?v=mini-20261020" defer></script>
   <script src="mini-core.js?v=nomes-20261020" defer></script>
-  <script src="app.js?v=mini-20261020" defer></script>
+  <script src="app.js?v=cartas-20261021" defer></script>
   <script src="firebase-config.js?v=mini-20261020" defer></script>
   <script src="cloud-client.js?v=mini-20261020" defer></script>
   <script src="account.js?v=mini-20261020" defer></script>
@@ -69,7 +69,16 @@
           <div class="wheel-title-row"><h2>Cartas <span class="pool-count" id="count-cards"></span></h2><div class="wheel-tools"><button class="icon-button shuffle-wheel" data-shuffle="cards" aria-label="Embaralhar cartas" title="Embaralhar cartas (Shuffle)"><svg><use href="#i-shuffle"/></svg></button><button class="edit-wheel text-button" data-edit="cards" aria-label="Editar cartas"><svg><use href="#i-edit"/></svg>Editar</button></div></div>
           <div class="wheel-stage" id="stage-cards"><div class="wheel-orbit"></div><div class="wheel-pointer"></div><div class="wheel-rotor" id="rotor-cards"></div><div class="wheel-hub"><svg><use href="#i-card"/></svg></div></div>
           <div class="wheel-result" id="result-cards" aria-live="polite"><strong>—</strong></div>
-          <div id="card-effect" class="card-effect" hidden><p id="card-effect-message" role="status"></p><div id="card-effect-controls" hidden><label class="form-label"><span id="card-effect-target-label">Retirar nesta vez</span><select id="card-effect-target"></select></label><div class="card-effect-actions"><button id="apply-card-effect" class="button button-primary">Aplicar e girar</button><button id="skip-card-effect" class="text-button">Não usar</button></div></div></div>
+          <div id="card-effect" class="card-effect" hidden>
+            <p id="card-effect-message" role="status"></p>
+            <div id="card-effect-controls" hidden><label class="form-label"><span id="card-effect-target-label">Retirar nesta vez</span><select id="card-effect-target"></select></label><div class="card-effect-actions"><button id="apply-card-effect" class="button button-primary">Aplicar e girar</button><button id="skip-card-effect" class="text-button">Não usar</button></div></div>
+            <div id="special-card-controls" hidden>
+              <label class="form-label" id="special-friend-field"><span id="special-friend-label">Colega</span><select id="special-friend"></select></label>
+              <label class="form-label" id="special-anime-field"><span id="special-anime-label">Anime da roleta</span><select id="special-anime"></select></label>
+              <label class="form-label" id="special-title-field">Anime, filme ou OVA<input id="special-title" maxlength="200" placeholder="Digite o título que quer assistir" autocomplete="off"></label>
+              <div class="card-effect-actions"><button type="button" id="apply-special-effect" class="button button-primary">Aplicar escolha</button><button type="button" id="skip-special-effect" class="text-button">Não usar</button><button type="button" id="reset-special-effect" class="text-button" hidden>Alterar escolha</button></div>
+            </div>
+          </div>
           <button class="button button-spin" id="spin-cards" data-spin="cards" aria-label="Girar roleta de cartas"><svg><use href="#i-refresh"/></svg>Girar</button>
         </article>
         <article class="wheel-card anime-card" data-wheel="anime">
@@ -184,7 +193,7 @@
           <label class="form-label" id="profile-field" hidden>Perfil do AniList (opcional)<input id="entry-profile" name="anilist-profile" maxlength="200" autocomplete="off" placeholder="https://anilist.co/user/usuario/"></label>
           <label class="form-label" id="owner-field" hidden>Indicado por<select id="entry-owner"><option value="">Sem indicação</option></select></label>
           <label class="form-label" id="description-field" hidden>Efeito ou penalidade<textarea id="entry-description" maxlength="300" rows="2" placeholder="O que acontece quando esta carta sair?"></textarea></label>
-          <label class="form-label" id="effect-field" hidden>Efeito automático<select id="entry-effect"><option value="none">Somente o texto da carta</option><option value="remove_anime">Retirar um anime nesta vez</option><option value="remove_owner">Retirar indicações de um colega nesta vez</option><option value="infernal">Adicionar os quatro animes de Infernizar</option></select></label>
+          <label class="form-label" id="effect-field" hidden>Efeito automático<select id="entry-effect"><option value="none">Somente o texto da carta</option><option value="remove_anime">Retirar um anime nesta vez</option><option value="remove_owner">Retirar indicações de um colega nesta vez</option><option value="infernal">Adicionar os quatro animes de Infernizar</option><option value="swap_result">Trocar com um colega que já roletou</option><option value="mutual">Rent a Girlfriend em call com um colega</option><option value="king">Decidir o anime de um colega que não rodou</option><option value="free_pick">Escolher um título livre, sem girar</option></select></label>
         </div>
         <div id="anime-search-tools" class="anime-search-tools" hidden><button type="button" id="search-anime" class="button button-quiet"><svg><use href="#i-search"/></svg>Buscar no MAL</button><span id="anime-search-status" class="search-status" role="status"></span></div>
         <ul id="anime-search-results" class="anime-search-results" aria-label="Animes encontrados" hidden></ul>
