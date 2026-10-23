@@ -1,5 +1,5 @@
 function createCloudClient(host, sdk) {
-  const friends = Object.freeze({hex:'Hex',kv:'KV',cap:'Cap',nando:'Nando',turbo:'Turbo',mary:'Mary',kris:'Kris',kyoka:'Kyoka'});
+  const participants = Object.freeze({hex:'Hex',kv:'KV',cap:'Cap',nando:'Nando',turbo:'Turbo',mary:'Mary',kris:'Kris',kyoka:'Kyoka',thiago:'Thiago'});
   const listeners = new Set();
   const state = { configured: false, ready: false, user: null, member: null, error: '' };
   let auth = null;
@@ -115,8 +115,8 @@ function createCloudClient(host, sdk) {
   function memberFromAuth(user) {
     const email = String(user.email || '').toLowerCase();
     const username = email.split('@')[0];
-    if (!Object.hasOwn(friends, username) || email !== username + '@usuarios.sorteio.invalid') throw clientError('Essa conta não pertence ao grupo. Confira o cadastro no Firebase.', 'cloud/member-unavailable');
-    return {uid:user.uid,username,name:friends[username],isAdmin:false,mustChangePassword:false};
+    if (!Object.hasOwn(participants, username) || email !== username + '@usuarios.sorteio.invalid') throw clientError('Essa conta não pertence ao grupo. Confira o cadastro no Firebase.', 'cloud/member-unavailable');
+    return {uid:user.uid,username,name:participants[username],isAdmin:false,mustChangePassword:false};
   }
 
   function settleInitial() {
@@ -273,7 +273,7 @@ function createCloudClient(host, sdk) {
     if (pendingSignOut) await pendingSignOut.catch(() => {});
     if (!state.configured) throw clientError(state.error || 'O serviço online ainda não foi configurado.', 'cloud/not-configured');
     const username = normalizedUsername(value);
-    if (!Object.hasOwn(friends, username)) throw clientError('Use o usuário de um colega do grupo.', 'cloud/invalid-argument');
+    if (!Object.hasOwn(participants, username)) throw clientError('Use o usuário de um colega do grupo.', 'cloud/invalid-argument');
     if (typeof password !== 'string' || !password.length || password.length > 4096) throw clientError('Informe sua senha.', 'cloud/invalid-argument');
     if (credentialBusy) throw clientError('Aguarde a operação de acesso em andamento.', 'cloud/busy');
     if (state.member) throw clientError('Saia da conta atual antes de entrar com outro usuário.', 'cloud/already-signed-in');
@@ -536,14 +536,14 @@ function createCloudClient(host, sdk) {
       result.docs.forEach((document)=>{
         const row=document.data();
         if(game==='notes'){
-          if(!Object.hasOwn(friends,row.username)||!Number.isInteger(row.score)||row.score<0||row.score>15||!Number.isInteger(row.wins)||row.wins<0||row.wins>5||document.id!==row.date+'_'+row.username||row.daysCompleted!==1)throw clientError('O ranking salvo está inconsistente.', 'cloud/invalid-response');
+          if(!Object.hasOwn(participants,row.username)||!Number.isInteger(row.score)||row.score<0||row.score>15||!Number.isInteger(row.wins)||row.wins<0||row.wins>5||document.id!==row.date+'_'+row.username||row.daysCompleted!==1)throw clientError('O ranking salvo está inconsistente.', 'cloud/invalid-response');
         }else{
           const maximum=row.mode==='characters'?8:22;
           const wins=row.mode==='characters'?4:1;
-          if(!['characters','anidle'].includes(row.mode)||row.version!==1||!Object.hasOwn(friends,row.username)||!Number.isInteger(row.score)||row.score<0||row.score>maximum||!Number.isInteger(row.wins)||row.wins<0||row.wins>wins||document.id!==row.mode+'_'+row.date+'_'+row.username||row.daysCompleted!==1||row.month!==dateValue(row.date).slice(0,7)||row.dateNumber!==Number(row.date.replaceAll('-',''))||row[query.type==='daily'?'date':'month']!==period)throw clientError('O ranking salvo está inconsistente.', 'cloud/invalid-response');
+          if(!['characters','anidle'].includes(row.mode)||row.version!==1||!Object.hasOwn(participants,row.username)||!Number.isInteger(row.score)||row.score<0||row.score>maximum||!Number.isInteger(row.wins)||row.wins<0||row.wins>wins||document.id!==row.mode+'_'+row.date+'_'+row.username||row.daysCompleted!==1||row.month!==dateValue(row.date).slice(0,7)||row.dateNumber!==Number(row.date.replaceAll('-',''))||row[query.type==='daily'?'date':'month']!==period)throw clientError('O ranking salvo está inconsistente.', 'cloud/invalid-response');
           if(row.mode!==game)return;
         }
-        const entry=totals.get(row.username)||{uid:row.username,username:row.username,name:friends[row.username],score:0,wins:0,daysCompleted:0,streak:0};
+        const entry=totals.get(row.username)||{uid:row.username,username:row.username,name:participants[row.username],score:0,wins:0,daysCompleted:0,streak:0};
         entry.score+=row.score;entry.wins+=row.wins;entry.daysCompleted++;
         totals.set(row.username,entry);
       });
