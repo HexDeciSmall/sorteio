@@ -4,21 +4,25 @@ Um clube de anime com três roletas editáveis: **amigo → carta especial → a
 
 **Já usa o site com Firebase funcionando?** Siga `ATUALIZAR-NOVOS-DESAFIOS.md`, entregue com `atualizacao-guessr-diarios.zip`. Esse ZIP de atualização não inclui `firebase-config.js`: preserve o arquivo já publicado e atualize as regras do Firestore no mesmo projeto. Não precisa recriar contas ou configurar outro Firebase.
 
+**Atualização das cartas especiais:** o guia `ATUALIZAR-CARTAS-ESPECIAIS.md` acompanha `atualizacao-cartas-especiais.zip`. Essa atualização das Roletas preserva a configuração do Firebase e os arquivos dos outros jogos.
+
+**Perfil do Nando:** o guia `ATUALIZAR-PERFIL-NANDO.md` acompanha `atualizacao-perfil-nando.zip`, com o vínculo `nandolrv` e a edição de Notas diárias a partir de 24/10/2026. Publique também as regras do Firestore incluídas nesse pacote para salvar a nova edição online.
+
 ## Testar no computador
 
-Extraia todos os arquivos para a mesma pasta e abra `index.html` em um navegador atualizado. Mantenha todos os arquivos entregues, incluindo `styles.css`, `core.js`, `catalog.js`, `app.js`, `guessr-core.js`, `daily-core.js`, `spark-core.js`, `daily-data.json`, `daily-cap.json`, `daily-kv.json`, `guessr.js`, `mini-core.js`, `mini-games.js`, `mini.css`, `mini-data.json`, `cloud-client.js`, `account.js`, `poster-placeholder.svg` e `favicon.svg`. O arquivo `firebase-config.js` pertence à configuração do seu site e precisa continuar ao lado de `index.html`. Não é necessário instalar Node.js, usar terminal ou contratar servidor. Para uma primeira instalação, o preparo do Firebase é explicado no guia `TUTORIAL-FIREBASE-GRATUITO.md`. As roletas e a edição manual funcionam sem consultas externas; busca, capas remotas, notas pessoais e carregamento das pistas do Guessr Livre precisam de internet.
+Extraia todos os arquivos para a mesma pasta e abra `index.html` em um navegador atualizado. Mantenha todos os arquivos entregues, incluindo `styles.css`, `core.js`, `catalog.js`, `app.js`, `guessr-core.js`, `daily-core.js`, `spark-core.js`, `daily-data.json`, `daily-cap.json`, `daily-kv.json`, `daily-nando.json`, `guessr.js`, `mini-core.js`, `mini-games.js`, `mini.css`, `mini-data.json`, `cloud-client.js`, `account.js`, `poster-placeholder.svg` e `favicon.svg`. O arquivo `firebase-config.js` pertence à configuração do seu site e precisa continuar ao lado de `index.html`. Não é necessário instalar Node.js, usar terminal ou contratar servidor. Para uma primeira instalação, o preparo do Firebase é explicado no guia `TUTORIAL-FIREBASE-GRATUITO.md`. As roletas e a edição manual funcionam sem consultas externas; busca, capas remotas, notas pessoais e carregamento das pistas do Guessr Livre precisam de internet.
 
 Para usar **Notas diárias**, **Personagens** e **Anidle**, abra o site no GitHub Pages ou em uma prévia local servida por HTTP: abrir `index.html` diretamente como `file://` pode bloquear a leitura dos arquivos JSON. As roletas e o modo Livre continuam disponíveis no arquivo local, com internet para as consultas do Livre.
 
 ## Usar com o grupo
 
 1. Abra **Editar listas**, no ícone de edição do topo, ou **Editar** em uma das roletas.
-2. Na aba **Nomes**, adicione, edite ou remova os participantes. Se quiser consultar notas pessoais e jogar Guessr, informe também o link do perfil público de cada amigo no AniList. Hex já começa vinculado a [HexDSmall](https://anilist.co/user/HexDSmall/), KV a [knvcria](https://anilist.co/user/knvcria/), Cap a [CapKiyo](https://anilist.co/user/CapKiyo/), Turbo a [Turbomob](https://anilist.co/user/Turbomob/), Mary a [Katupiry](https://anilist.co/user/Katupiry/), Kris a [KrismonKalamity](https://anilist.co/user/KrismonKalamity/) e Kyoka a [Kycks](https://anilist.co/user/Kycks/); falta o perfil de Nando. Kyoka é adicionado uma única vez aos dados salvos, se ainda não estiver na lista e houver espaço. Cada novo vínculo padrão é preenchido nos dados já salvos uma única vez, quando estiver vazio, preservando os perfis personalizados.
+2. Na aba **Nomes**, adicione, edite ou remova os participantes. Se quiser consultar notas pessoais e jogar Guessr, informe também o link do perfil público de cada amigo no AniList. Hex já começa vinculado a [HexDSmall](https://anilist.co/user/HexDSmall/), KV a [knvcria](https://anilist.co/user/knvcria/), Cap a [CapKiyo](https://anilist.co/user/CapKiyo/), Nando a [nandolrv](https://anilist.co/user/nandolrv/), Turbo a [Turbomob](https://anilist.co/user/Turbomob/), Mary a [Katupiry](https://anilist.co/user/Katupiry/), Kris a [KrismonKalamity](https://anilist.co/user/KrismonKalamity/) e Kyoka a [Kycks](https://anilist.co/user/Kycks/). Kyoka é adicionado uma única vez aos dados salvos, se ainda não estiver na lista e houver espaço. Cada novo vínculo padrão é preenchido nos dados já salvos uma única vez, quando estiver vazio, preservando os perfis personalizados.
 3. Na aba **Cartas**, edite os nomes, as descrições e o seletor **Efeito automático**. Use **Cartas padrão** para completar as cartas originais que faltarem, sem duplicar as que já estão cadastradas.
 4. Na aba **Animes**, busque um título no catálogo ou cadastre-o manualmente. Selecione o resultado desejado, escolha quem indicou e finalize em **Adicionar** ou **Salvar alteração**, ao editar. Cada amigo pode ter até **2 indicações**; também é possível cadastrar títulos sem indicação.
-5. Clique em **Girar tudo** para girar as três roletas na sequência. Se a carta pedir uma escolha, selecione a opção e use **Aplicar** ou **Não usar** antes do giro do anime. Também é possível usar os botões **Girar** de **Nomes**, **Cartas** e **Animes** individualmente.
-6. Confira o anime sorteado. Com as três escolhas completas, clique em **Confirmar**, abaixo da roleta de animes, para registrar a rodada em **Resultados**. Só então o nome e o anime saem das opções disponíveis do ciclo.
-7. Se quiser outro anime, clique em **Não, girar outro**. O nome e a carta permanecem, e apenas o anime é sorteado novamente. Confira a nova escolha antes de confirmar.
+5. Clique em **Girar tudo** para sortear o nome e a carta e seguir o fluxo indicado. Resolva as escolhas da carta quando aparecerem; algumas regras substituem o giro do anime por uma escolha direta. Também é possível usar os botões **Girar** de **Nomes**, **Cartas** e **Animes** individualmente quando disponíveis.
+6. Confira a atribuição final e clique em **Confirmar**, abaixo da roleta de animes, para registrá-la em **Resultados**. Escolher ou aplicar um efeito deixa um rascunho: as alterações nos resultados e o consumo das opções só acontecem na confirmação.
+7. Quando a carta permitir outro giro, use **Não, girar outro**. O nome e a carta permanecem, e apenas o anime é sorteado novamente. Confira a nova escolha antes de confirmar.
 8. Depois de confirmar, clique em **Girar tudo** para sortear o próximo colega. Consulte as rodadas anteriores em **Histórico**, no ícone de relógio do topo.
 
 Antes de completar as três escolhas, você pode refazer um giro individual. Com as três prontas, os giros de nomes e cartas ficam bloqueados enquanto você decide se confirma o anime ou pede outro. As escolhas pendentes continuam no mesmo estado ao fechar e reabrir o site; reabrir não confirma a rodada.
@@ -31,13 +35,13 @@ Recusar um anime não o consome. Se houver outra opção disponível, o título 
 
 Os Resultados mostram as atribuições do ciclo atual na ordem em que aconteceram, no formato **Nome — Anime (efeito da carta)**. Quando a carta não tiver descrição, aparece o nome dela entre parênteses. Use **Copiar**, na seção Resultados, para levar essa lista ao grupo.
 
-Os participantes iniciais são **Hex, KV, Cap, Nando, Turbo, Mary, Kris e Kyoka**. O site começa com **7 segmentos de cartas e nenhum anime**. Adicione os animes do grupo antes de completar um sorteio.
+Os participantes iniciais são **Hex, KV, Cap, Nando, Turbo, Mary, Kris e Kyoka**. O site começa com **11 segmentos de cartas e nenhum anime**. Adicione os animes do grupo antes de completar um sorteio.
 
-A atualização instala as cartas padrão uma única vez quando encontra uma lista vazia. As listas já personalizadas são mantidas; nelas, use **Cartas padrão** se quiser acrescentar as regras originais. Os antigos animes de exemplo são removidos quando o conjunto ainda está intacto, preservando as personalizações.
+A atualização acrescenta **Sofra Imbecil, Destruição Mutua Assegurada, O Rei mandou e To fora dessa** uma única vez, preservando as cartas personalizadas. Use **Cartas padrão** para completar as cartas originais que faltarem. Os antigos animes de exemplo são removidos quando o conjunto ainda está intacto, preservando as personalizações.
 
 ### Cartas e efeitos automáticos
 
-O baralho padrão tem três cartas especiais e quatro cópias de Sem Efeito. Cada segmento tem a mesma chance: **Sem Efeito ocupa 4 dos 7 segmentos**. Você pode editar as cartas e escolher seu comportamento em **Efeito automático**; o nome ou a descrição, sozinhos, não ativam uma regra.
+O baralho padrão tem sete cartas especiais e quatro cópias de Sem Efeito. Cada segmento tem a mesma chance: **Sem Efeito ocupa 4 dos 11 segmentos**. Você pode editar as cartas e escolher seu comportamento em **Efeito automático**; o nome ou a descrição, sozinhos, não ativam uma regra.
 
 | Carta padrão | O que acontece |
 | --- | --- |
@@ -45,10 +49,16 @@ O baralho padrão tem três cartas especiais e quatro cópias de Sem Efeito. Cad
 | **Preconceito** | Escolha um colega. As indicações dele ficam fora da roleta apenas na vez atual; os animes continuam cadastrados. Use Aplicar ou Não usar. |
 | **Sem Efeito** | Não altera o sorteio. Há quatro cópias no baralho padrão. |
 | **Infernizar** | Ao confirmar o anime da rodada, acrescenta **Hand Shakers, Gamers, Rent a Girlfriend e Terra Formars** à lista de animes, sem duplicar os títulos já cadastrados. |
+| **Sofra Imbecil** | Depois do giro do anime, pode trocar a atribuição com um colega que já rodou ou manter o próprio resultado. A troca só é concluída em Confirmar. |
+| **Destruição Mutua Assegurada** | Escolha outro colega, tenha ele rodado ou não. Os dois assistirão **Rent a Girlfriend em call**, sem giro de anime. Se o colega já tinha um anime, essa atribuição anterior é liberada. Vale mesmo se Rent a Girlfriend já saiu para outra pessoa e não cadastra cópias do título na lista. |
+| **O Rei mandou** | Escolha um colega que ainda não rodou e um anime disponível na roleta para ele. O dono da carta continua o próprio sorteio normalmente. |
+| **To fora dessa** | Informe manualmente um anime, filme ou OVA, dentro ou fora da roleta, para assistir sem girar. Um título externo não é acrescentado automaticamente ao catálogo. |
 
 Nem a Pau e Preconceito são filtros temporários. O site não permite aplicá-los quando isso deixaria a roleta sem animes; use Não usar para continuar nesse caso. A escolha feita para a vez permanece nas recusas do anime, ao recarregar a página e nos backups. Quando a rodada é confirmada, o filtro é encerrado.
 
 Infernizar é obrigatório quando essa carta é confirmada: não exige Aplicar e não oferece Não usar. **Recusar um anime não acrescenta os quatro títulos**; a adição só acontece depois de Confirmar. As cartas personalizadas sem efeito automático apenas registram a descrição, para o grupo aplicar suas próprias regras manualmente.
+
+As escolhas de Sofra Imbecil, Destruição Mutua Assegurada, O Rei mandou e To fora dessa ficam pendentes até **Confirmar**. Quando uma carta envolve duas atribuições, o site confirma o conjunto em uma única operação; a seleção do efeito, sozinha, não altera os resultados já registrados.
 
 ### Busca, capas e notas
 
@@ -64,11 +74,11 @@ Colegas sem vínculo exibem **Sem perfil**. Você não precisa abrir uma seção
 
 ### Repetições e ciclos
 
-Nomes e animes **não se repetem no mesmo ciclo**. Assim que uma rodada é confirmada, ambos deixam de participar dos próximos sorteios. As cartas podem se repetir. Giros ainda não confirmados não consomem as opções.
+Nos sorteios comuns, nomes e animes **não se repetem no mesmo ciclo**. Assim que uma rodada é confirmada, ambos deixam de participar dos próximos sorteios. As cartas podem se repetir. Destruição Mutua Assegurada atribui o mesmo título a duas pessoas; Sofra Imbecil troca atribuições e O Rei mandou atribui um anime a outro colega. Giros e escolhas ainda não confirmados não consomem as opções.
 
 Os itens sorteados continuam cadastrados nas listas de edição; eles não são apagados. Quando quiser começar outro ciclo, clique em **Limpar resultados**, no cabeçalho da seção Resultados, e confirme. Os nomes e animes voltam às roletas, os Resultados do ciclo atual são limpos, e o Histórico permanece guardado. Escolhas pendentes ainda não confirmadas também são descartadas.
 
-Para corrigir uma atribuição, use a lixeira **Excluir resultado** na linha correspondente e confirme. Ela é removida dos Resultados e do Histórico; o nome e o anime voltam a participar se ainda estiverem cadastrados. As outras atribuições continuam guardadas.
+Para corrigir uma atribuição, use a lixeira **Excluir resultado** e confira o aviso antes de confirmar. A exclusão remove os registros afetados dos Resultados e do Histórico. Excluir a linha principal ou a adicional criada por Destruição Mutua Assegurada/O Rei mandou remove o conjunto inteiro. Trocas ou substituições posteriores que dependam do resultado excluído também são desfeitas. Atribuições anteriores que permanecerem recuperam o anime anterior. Nomes e animes cadastrados voltam a participar quando nenhum outro resultado ainda os utiliza; resultados independentes continuam guardados.
 
 Se a atribuição excluída adicionou títulos por Infernizar, essas adições também são desfeitas quando continuam intactas e ainda não foram usadas. Títulos editados, já usados, escolhidos na rodada pendente ou presentes em outro resultado do Histórico são preservados.
 
@@ -88,7 +98,7 @@ Escolha **Livre** para novas rodadas a partir dos perfis vinculados ou **Notas d
 
 Para uma rodada valer pontos, é necessário ter **pelo menos 2 colegas com perfis aptos**: cada perfil precisa estar público, acessível e ter ao menos **3 animes avaliados**. Cadastrar um link, sozinho, não garante que ele tenha dados suficientes para jogar.
 
-Hex, KV, Cap, Turbo, Mary, Kris e Kyoka já vêm com seus perfis configurados. Cap usa [CapKiyo](https://anilist.co/user/CapKiyo/) tanto nas notas pessoais das roletas quanto no Livre. Quando pelo menos dois estiverem aptos, as rodadas valem pontos. Se apenas um perfil puder ser usado, o site oferece uma **Prévia jogável, sem pontuação**, usando três avaliações reais dele. KV usa [knvcria](https://anilist.co/user/knvcria/). Para incluir Nando, abra **Editar listas → Nomes** e adicione seu link público correto do AniList.
+Hex, KV, Cap, Nando, Turbo, Mary, Kris e Kyoka já vêm com seus perfis configurados, tanto nas notas pessoais das roletas quanto no Livre. Nando usa [nandolrv](https://anilist.co/user/nandolrv/). Quando pelo menos dois estiverem aptos, as rodadas valem pontos. Se apenas um perfil puder ser usado, o site oferece uma **Prévia jogável, sem pontuação**, usando três avaliações reais dele.
 
 O Livre consulta apenas informações públicas. Entradas privadas, sem nota ou marcadas como conteúdo adulto não são usadas nas pistas; não há notas ou pistas inventadas. As capas vêm do AniList quando disponíveis. Perfis sem avaliações públicas suficientes não entram como origem de uma rodada.
 
@@ -102,15 +112,15 @@ Cada data tem **5 rodadas fixas**, iguais para todos os navegadores que usam est
 
 O calendário começa em **20/10/2026** e permite escolher datas até hoje, sempre pelo fuso **America/Sao_Paulo**. Não há desafios futuros. Você pode recuperar dias anteriores para fechar lacunas na sequência. A sequência atual conta dias concluídos consecutivos e permanece ativa quando o último dia concluído é hoje ou ontem. Um desafio concluído não pode ser reiniciado nem jogado novamente; as cinco rodadas continuam disponíveis para revisão.
 
-As pistas vêm de bases públicas fixas. A edição de **20/10/2026**, identificada por `2026-10-20-v1`, mantém os cinco perfis originais de Hex, Turbo, Mary, Kris e Kyoka em `daily-data.json`. A partir de **21/10/2026**, a edição `2026-10-21-cap-kv-v1` acrescenta os perfis reais de **Cap — CapKiyo** e **KV — knvcria**, guardados em `daily-cap.json` e `daily-kv.json`, e passa a usar sete perfis. O desafio de 20/10 continua exatamente o mesmo.
+As pistas vêm de bases públicas fixas. A edição de **20/10/2026**, identificada por `2026-10-20-v1`, mantém os cinco perfis originais de Hex, Turbo, Mary, Kris e Kyoka em `daily-data.json`. A partir de **21/10/2026**, a edição `2026-10-21-cap-kv-v1` acrescenta os perfis reais de **Cap — CapKiyo** e **KV — knvcria**, guardados em `daily-cap.json` e `daily-kv.json`, e passa a usar sete perfis. A partir de **24/10/2026**, a edição `2026-10-24-nando-v1` acrescenta **Nando — nandolrv**, com 406 avaliações públicas em `daily-nando.json`, e passa a usar oito perfis. Os desafios até 23/10 continuam exatamente os mesmos, incluindo partidas em andamento e resultados concluídos.
 
-O registro de edições em `guessr.js` escolhe a base pela data do desafio. **Mantenha os três arquivos de dados e seus identificadores inalterados**; futuras edições precisam preservar as bases anteriores para não mudar desafios já disponíveis. As pistas do Diário não atualizam ao vivo nem dependem das listas locais. O Livre continua consultando os perfis atuais normalmente.
+O registro de edições em `spark-core.js` escolhe a base pela data do desafio e é compartilhado entre o modo local e o online. **Mantenha os quatro arquivos de dados e seus identificadores inalterados**; futuras edições precisam preservar as bases anteriores para não mudar desafios já disponíveis. As pistas do Diário não atualizam ao vivo nem dependem das listas locais. O Livre continua consultando os perfis atuais normalmente.
 
-No modo local, o progresso, a pontuação diária e a sequência ficam somente neste navegador, na chave `sorteio.guessr.daily.v1`. Os dias já salvos são preservados ao mudar de edição, incluindo conclusões e sequência. Não entram na exportação JSON das roletas. Os arquivos `daily-core.js`, `daily-data.json`, `daily-cap.json` e `daily-kv.json` são obrigatórios para esse modo.
+No modo local, o progresso, a pontuação diária e a sequência ficam somente neste navegador, na chave `sorteio.guessr.daily.v1`. Os dias já salvos são preservados ao mudar de edição, incluindo conclusões e sequência. Não entram na exportação JSON das roletas. Os arquivos `daily-core.js`, `spark-core.js`, `daily-data.json`, `daily-cap.json`, `daily-kv.json` e `daily-nando.json` são obrigatórios para esse modo.
 
 ### Personagens — desafio diário
 
-São **4 personagens por data**. Digite o **nome do personagem** e o **anime ao qual pertence** em cada cartão. O nome e a obra valem **1 ponto cada**, até **8 pontos** por desafio. Nomes alternativos e títulos equivalentes do catálogo são aceitos; no anime, o preenchimento oferece sugestões.
+São **4 personagens por data**. Digite o **nome do personagem** e o **anime ao qual pertence** em cada cartão. O nome e a obra valem **1 ponto cada**, até **8 pontos** por desafio. Os dois campos oferecem sugestões: a busca de personagens reconhece os nomes alternativos e a de animes reconhece títulos equivalentes. Selecione com o mouse ou com as setas e Enter; escolher uma sugestão apenas preenche o campo, sem gastar tentativa.
 
 Você pode fazer **até 3 envios para o conjunto dos quatro cartões**, e não três envios por personagem. As respostas certas ficam marcadas e você continua tentando as partes que faltam. Ao acertar tudo ou esgotar os envios, o jogo termina e mostra as respostas. Não há modo Livre ou infinito para Personagens.
 
@@ -134,7 +144,9 @@ Preserve `mini-data.json` e seu identificador `mini-2026-10-20-v1` nas próximas
 
 Em uma primeira instalação, o arquivo `firebase-config.js` precisa receber os dados públicos do seu projeto e `enabled: true`. Se a conexão estiver desativada, as Roletas, o Livre e os desafios locais continuam disponíveis; login e ranking indicam que a configuração online está pendente. Siga o **TUTORIAL-FIREBASE-GRATUITO.md** para configurar pelo painel do Firebase, usando **Authentication e Firestore no plano Spark**, sem cartão, Cloud Functions ou publicação de servidor. Se o login já funciona, preserve esse arquivo e siga apenas o guia de atualização. O site continua no GitHub Pages.
 
-As oito contas do grupo são criadas manualmente no painel **Authentication → Users**. Cada colega entra no site com **usuário e senha**, por exemplo `kv`, sem informar e-mail pessoal. O código transforma o usuário em um endereço técnico como `kv@usuarios.sorteio.invalid`; ele não é uma caixa de e-mail. As regras do Firestore liberam os dados apenas para as contas previstas do grupo. Os perfis do AniList continuam separados dessas contas de login.
+Os logins previstos são **hex, kv, cap, nando, turbo, mary, kris, kyoka e thiago**. Contas que ainda não existirem podem ser cadastradas no painel **Authentication → Users**. Cada colega entra no site com **usuário e senha**, por exemplo `kv`, sem informar e-mail pessoal. O código transforma o usuário em um endereço técnico como `kv@usuarios.sorteio.invalid`; ele não é uma caixa de e-mail. As regras do Firestore liberam os dados apenas para as contas previstas do grupo. Os perfis do AniList continuam separados dessas contas de login.
+
+**Thiago é um participante apenas dos jogos e rankings.** Ele pode jogar os modos do Guessr e pontuar nos desafios diários de Notas, Personagens e Anidle, sem perfil AniList. Seu nome não é acrescentado às Roletas nem às respostas do Guessr de notas. Ele aparece nos rankings dos desafios que concluir; o modo Livre mantém o placar local habitual.
 
 Quem conhece a senha atual pode usar **Minha conta → Trocar senha**. Como os endereços técnicos não recebem mensagens, a recuperação por e-mail não funciona. Consulte no tutorial a alternativa para uma senha esquecida e suas consequências para o progresso.
 
@@ -188,6 +200,7 @@ O Tenrai substitui a API pública do Jikan, encerrada em **1º de outubro de 202
 - `daily-core.js`: desafios por data, conclusão, calendário e sequência de participação do Diário.
 - `daily-data.json`: base pública fixa `2026-10-20-v1`; deve ser preservada para manter os desafios anteriores.
 - `daily-kv.json`: complemento fixo de knvcria, com 367 avaliações públicas para a edição de 21/10/2026.
+- `daily-nando.json`: complemento fixo de nandolrv, com 406 avaliações públicas para a edição de 24/10/2026.
 - `daily-cap.json`: complemento fixo de CapKiyo, usado na edição `2026-10-21-cap-kv-v1`; também deve ser preservado.
 - `guessr.js`: telas dos modos Livre e Diário, registro das edições por data, consultas e armazenamento separado do Guessr.
 - `mini-core.js`: regras, validação, respostas equivalentes e seleção diária de Personagens e Anidle.

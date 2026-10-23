@@ -75,7 +75,7 @@
       history: [],
       cycleRoundIds: [],
       cardDefaultsVersion: 2,
-      profileDefaultsVersion: 7,
+      profileDefaultsVersion: 8,
       turnEffect: emptyTurnEffect(),
       specialEffect: null
     };
@@ -195,6 +195,15 @@
       }
       if (state.profileDefaultsVersion >= 6) { state.profileDefaultsVersion = 7; changed = true; }
     }
+    if (profileVersion < 8) {
+      var nando = state.friends.find(function (friend) { return normalizedName(friend.name) === 'nando'; });
+      if (nando && !nando.anilistUsername) {
+        nando.anilistUsername = 'nandolrv';
+        if (state.current.friend && state.current.friend.id === nando.id) state.current.friend.anilistUsername = 'nandolrv';
+        changed = true;
+      }
+      if (state.profileDefaultsVersion >= 7) { state.profileDefaultsVersion = 8; changed = true; }
+    }
     if (changed) prepareTurnEffect(state);
     return changed;
   }
@@ -204,6 +213,7 @@
     if (name === 'Hex') friend.anilistUsername = 'HexDSmall';
     if (name === 'KV') friend.anilistUsername = 'knvcria';
     if (name === 'Cap') friend.anilistUsername = 'CapKiyo';
+    if (name === 'Nando') friend.anilistUsername = 'nandolrv';
     if (name === 'Turbo') friend.anilistUsername = 'Turbomob';
     if (name === 'Mary') friend.anilistUsername = 'Katupiry';
     if (name === 'Kris') friend.anilistUsername = 'KrismonKalamity';
@@ -391,7 +401,7 @@
     state.cardDefaultsVersion = own(input, 'cardDefaultsVersion') ? input.cardDefaultsVersion : 0;
     if (![0, 1, 2].includes(state.cardDefaultsVersion)) fail('Versão de cartas padrão inválida.');
     state.profileDefaultsVersion = own(input, 'profileDefaultsVersion') ? input.profileDefaultsVersion : 0;
-    if (![0, 1, 2, 3, 4, 5, 6, 7].includes(state.profileDefaultsVersion)) fail('Versão de perfis padrão inválida.');
+    if (![0, 1, 2, 3, 4, 5, 6, 7, 8].includes(state.profileDefaultsVersion)) fail('Versão de perfis padrão inválida.');
     var labels = { friends: 'Amigos', cards: 'Cartas', anime: 'Animes' };
     var ids = {};
     ['friends', 'cards', 'anime'].forEach(function (key) {

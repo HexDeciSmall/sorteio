@@ -183,19 +183,14 @@
           const responses = await Promise.all([
             fetch('daily-data.json?v=2026-10-20-v1', { signal: controller.signal }),
             fetch('daily-cap.json?v=2026-10-21-cap-v1', { signal: controller.signal }),
-            fetch('daily-kv.json?v=2026-10-21-cap-kv-v1', { signal: controller.signal })
+            fetch('daily-kv.json?v=2026-10-21-cap-kv-v1', { signal: controller.signal }),
+            fetch('daily-nando.json?v=2026-10-24-nando-v1', { signal: controller.signal })
           ]);
           if (responses.some((response) => !response.ok)) throw new Error('Não foi possível carregar a base dos desafios.');
-          const [original, cap, kv] = await Promise.all(responses.map((response) => response.json()));
+          const [original, cap, kv, nando] = await Promise.all(responses.map((response) => response.json()));
           if (cap.friendId !== 'daily_cap' || cap.name !== 'Cap' || !cap.username || cap.username.toLowerCase() !== 'capkiyo') throw new Error('O perfil de Cap nas pistas diárias é inválido.');
           if (kv.friendId !== 'daily_kv' || kv.name !== 'KV' || kv.username !== 'knvcria') throw new Error('O perfil de KV nas pistas diárias é inválido.');
-          const updated = { ...original, id: '2026-10-21-cap-kv-v1', startDate: '2026-10-21', profiles: original.profiles.concat(cap, kv) };
-          const archive = { version: 1, startDate: original.startDate, friends: original.friends, editions: [
-            { from: original.startDate, dataset: original },
-            { from: updated.startDate, dataset: updated }
-          ] };
-          D.validateDataset(archive);
-          dailyDataset = archive;
+          dailyDataset = window.SorteioSparkGame.createArchive({ D, base: original, cap, kv, nando });
         } finally { clearTimeout(timer); }
       }
       if (!dailyState) {

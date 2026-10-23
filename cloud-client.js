@@ -340,10 +340,10 @@ function createCloudClient(host, sdk) {
       const controller=new AbortController();
       const timer=setTimeout(()=>controller.abort(),15000);
       try {
-        const responses=await Promise.all(['daily-data.json?v=2026-10-20-v1','daily-cap.json?v=2026-10-21-cap-v1','daily-kv.json?v=2026-10-21-cap-kv-v1'].map((file)=>host.fetch(file,{signal:controller.signal})));
+        const responses=await Promise.all(['daily-data.json?v=2026-10-20-v1','daily-cap.json?v=2026-10-21-cap-v1','daily-kv.json?v=2026-10-21-cap-kv-v1','daily-nando.json?v=2026-10-24-nando-v1'].map((file)=>host.fetch(file,{signal:controller.signal})));
         if (responses.some((response)=>!response.ok)) throw clientError('Não foi possível carregar as pistas.', 'cloud/unavailable');
-        const [base,cap,kv]=await Promise.all(responses.map((response)=>response.json()));
-        return host.SorteioSparkGame.createEngine({G:host.GuessrCore,D:host.DailyGuessr,base,cap,kv});
+        const [base,cap,kv,nando]=await Promise.all(responses.map((response)=>response.json()));
+        return host.SorteioSparkGame.createEngine({G:host.GuessrCore,D:host.DailyGuessr,base,cap,kv,nando});
       } finally {clearTimeout(timer);}
     })().catch((error)=>{enginePromise=null;throw error;});
     return enginePromise;

@@ -7,19 +7,34 @@
   'use strict';
   var START = '2026-10-20';
   var EDITION = '2026-10-21-cap-kv-v1';
+  var NANDO_EDITION = '2026-10-24-nando-v1';
   var copy = function (value) { return JSON.parse(JSON.stringify(value)); };
   function fail(code, message) { var error = new Error(message); error.code = 'cloud/' + code; throw error; }
   function plain(value) { return !!value && typeof value === 'object' && !Array.isArray(value) && [Object.prototype, null].includes(Object.getPrototypeOf(value)); }
   function validId(value) { return typeof value === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(value); }
   function requestId(value) { return typeof value === 'string' && /^[A-Za-z0-9_-]{8,80}$/.test(value); }
 
-  function createEngine(settings) {
-    if (!settings || !settings.G || !settings.D || !settings.base || !settings.cap || !settings.kv) fail('invalid-argument', 'As pistas do desafio não foram carregadas.');
+  function createArchive(settings) {
+    if (!settings || !settings.D || !settings.base || !settings.cap || !settings.kv) fail('invalid-argument', 'As pistas do desafio não foram carregadas.');
     var D = settings.D;
     var base = copy(settings.base);
     var updated = Object.assign({}, base, { id: EDITION, startDate: '2026-10-21', profiles: base.profiles.concat(copy(settings.cap), copy(settings.kv)) });
     var archive = { version: 1, startDate: START, friends: base.friends, editions: [{ from: START, dataset: base }, { from: updated.startDate, dataset: updated }] };
+    if (Object.prototype.hasOwnProperty.call(settings, 'nando')) {
+      var nando = settings.nando;
+      if (!plain(nando) || nando.friendId !== 'daily_nando' || nando.name !== 'Nando' || nando.username !== 'nandolrv') fail('invalid-argument', 'O perfil de Nando nas pistas diárias é inválido.');
+      var next = Object.assign({}, updated, { id: NANDO_EDITION, startDate: '2026-10-24', profiles: updated.profiles.concat(copy(nando)) });
+      if (!D.validateDataset(next).profiles.some(function (profile) { return profile.friendId === 'daily_nando' && profile.username === 'nandolrv'; })) fail('invalid-argument', 'O perfil de Nando precisa de pelo menos três animes avaliados.');
+      archive.editions.push({ from: next.startDate, dataset: next });
+    }
     D.validateDataset(archive);
+    return archive;
+  }
+
+  function createEngine(settings) {
+    if (!settings || !settings.G) fail('invalid-argument', 'As pistas do desafio não foram carregadas.');
+    var D = settings.D;
+    var archive = createArchive(settings);
 
     function checkedDate(date, today) {
       try { D.validateDate(date); D.validateDate(today); } catch (_) { fail('invalid-argument', 'Escolha uma data válida.'); }
@@ -105,5 +120,5 @@
     }
     return Object.freeze({ read: read, apply: apply, redact: redact, response: response });
   }
-  return Object.freeze({ createEngine: createEngine });
+  return Object.freeze({ createEngine: createEngine, createArchive: createArchive });
 });
