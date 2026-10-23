@@ -8,6 +8,8 @@ Um clube de anime com três roletas editáveis: **amigo → carta especial → a
 
 **Perfil do Nando:** o guia `ATUALIZAR-PERFIL-NANDO.md` acompanha `atualizacao-perfil-nando.zip`, com o vínculo `nandolrv` e a edição de Notas diárias a partir de 24/10/2026. Publique também as regras do Firestore incluídas nesse pacote para salvar a nova edição online.
 
+**Personagens e Anidle sem repetições:** o guia `ATUALIZAR-DESAFIOS-SEM-REPETICAO.md` acompanha `atualizacao-desafios-sem-repeticao.zip`. A partir de 24/10/2026, os jogos passam a consumir o catálogo sem reposição; o Anidle usa apenas séries de TV e de streaming. Publique as regras incluídas para salvar a nova edição online.
+
 ## Testar no computador
 
 Extraia todos os arquivos para a mesma pasta e abra `index.html` em um navegador atualizado. Mantenha todos os arquivos entregues, incluindo `styles.css`, `core.js`, `catalog.js`, `app.js`, `guessr-core.js`, `daily-core.js`, `spark-core.js`, `daily-data.json`, `daily-cap.json`, `daily-kv.json`, `daily-nando.json`, `guessr.js`, `mini-core.js`, `mini-games.js`, `mini.css`, `mini-data.json`, `cloud-client.js`, `account.js`, `poster-placeholder.svg` e `favicon.svg`. O arquivo `firebase-config.js` pertence à configuração do seu site e precisa continuar ao lado de `index.html`. Não é necessário instalar Node.js, usar terminal ou contratar servidor. Para uma primeira instalação, o preparo do Firebase é explicado no guia `TUTORIAL-FIREBASE-GRATUITO.md`. As roletas e a edição manual funcionam sem consultas externas; busca, capas remotas, notas pessoais e carregamento das pistas do Guessr Livre precisam de internet.
@@ -120,11 +122,15 @@ No modo local, o progresso, a pontuação diária e a sequência ficam somente n
 
 ### Personagens — desafio diário
 
+A partir de **24/10/2026**, o sorteio usa ciclos sem reposição: um personagem só pode reaparecer depois que todos os personagens do catálogo tiverem sido usados. Os personagens exibidos de 20 a 23/10 já contam como usados no primeiro ciclo. Cada dia continua mostrando quatro personagens distintos, com preferência por obras diferentes quando houver opções. Quando o catálogo se esgota, começa um novo ciclo.
+
 São **4 personagens por data**. Digite o **nome do personagem** e o **anime ao qual pertence** em cada cartão. O nome e a obra valem **1 ponto cada**, até **8 pontos** por desafio. Os dois campos oferecem sugestões: a busca de personagens reconhece os nomes alternativos e a de animes reconhece títulos equivalentes. Selecione com o mouse ou com as setas e Enter; escolher uma sugestão apenas preenche o campo, sem gastar tentativa.
 
 Você pode fazer **até 3 envios para o conjunto dos quatro cartões**, e não três envios por personagem. As respostas certas ficam marcadas e você continua tentando as partes que faltam. Ao acertar tudo ou esgotar os envios, o jogo termina e mostra as respostas. Não há modo Livre ou infinito para Personagens.
 
 ### Anidle — desafio diário
+
+A partir de **24/10/2026**, os alvos e as sugestões do Anidle usam apenas **séries de TV e de streaming**: formatos TV, TV_SHORT e ONA, num total de **745 títulos**. OVAs, filmes e especiais ficam fora dos novos sorteios. Cada anime aparece uma vez por ciclo; os títulos elegíveis exibidos de 20 a 23/10 já contam como usados no primeiro ciclo. Ao esgotar o catálogo, começa um novo ciclo. As diferentes temporadas continuam sendo títulos separados, conforme o cadastro do AniList.
 
 Descubra o anime do dia usando **até 22 palpites diferentes**, escolhidos nas sugestões da busca. Cada palpite compara **ano, estúdio, origem, nota, gêneros e tags** com o anime secreto. As setas indicam se o ano ou a nota da resposta são maiores ou menores. Cores e indicadores distinguem valores iguais, parciais ou diferentes.
 
@@ -139,6 +145,8 @@ O arquivo `mini-data.json` contém uma base fixa de **851 animes e 320 personage
 Sem Firebase ativo, esses dois jogos guardam o progresso somente no navegador, na chave `sorteio.mini.v1`. Com a conexão configurada, entre na conta para usar o progresso sincronizado e os rankings; partidas locais antigas não são importadas automaticamente. Jogar qualquer um deles não altera as roletas, o placar Livre ou os desafios de Notas.
 
 Preserve `mini-data.json` e seu identificador `mini-2026-10-20-v1` nas próximas atualizações. Trocar a base sem versionamento pode mudar desafios de datas já jogadas.
+
+Os desafios de **20 a 23/10** mantêm exatamente os alvos, buscas e progresso originais, inclusive o OVA que já saiu nesse período. A edição de sorteio **`mini-2026-10-24-v2`** vale para datas a partir de 24/10 e usa o mesmo catálogo imutável. A ordem dos ciclos depende apenas da data e dessa edição, sendo igual no modo local e no online, para todos os jogadores. O calendário continua permitindo recuperar os dias anteriores sem mudar resultados, pontuações ou sequências. Atualize `mini-core.js`, `mini-games.js`, `index.html` e as regras do Firestore juntos; elas impedem que versões antigas salvem outros alvos nos dias da nova edição.
 
 ### Login, progresso online e rankings
 

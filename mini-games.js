@@ -162,7 +162,7 @@
     }
     function search() {
       if (!engine || input.value.trim().length < (names ? 1 : 2) || input.disabled) { close(); return; }
-      options = names ? engine.searchCharacters(input.value, 8) : engine.searchAnime(input.value, 8); index = -1; paint();
+      options = names ? engine.searchCharacters(input.value, 8) : engine.searchAnime(input.value, 8, { mode, date }); index = -1; paint();
     }
     function keydown(event) {
       if (event.key === 'Escape') { close(); return; }

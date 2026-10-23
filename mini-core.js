@@ -8,6 +8,8 @@
 
   var START_DATE = '2026-10-20';
   var DATASET_ID = 'mini-2026-10-20-v1';
+  var SCHEDULE_START = '2026-10-24';
+  var SCHEDULE_ID = 'mini-2026-10-24-v2';
   var LIMITS = { characters: 3, anidle: 22 };
   var own = function (value, key) { return Object.prototype.hasOwnProperty.call(value, key); };
   var clone = function (value) { return JSON.parse(JSON.stringify(value)); };
@@ -122,6 +124,12 @@
     if (new Set(characters.map(function (item) { return item.id; })).size !== characters.length) fail('O catálogo contém personagens repetidos.');
     var generatedAt = cleanText(input.generatedAt, 80, 'A data do catálogo', true) || null;
     var generationCache = new Map();
+    var schedulePools;
+    var cycleCache = new Map();
+
+    function scheduleId(date) { return date < SCHEDULE_START ? DATASET_ID : SCHEDULE_ID; }
+
+    function isSeries(item) { return ['TV', 'TV_SHORT', 'ONA'].includes(item.format); }
 
     function validMode(mode) {
       if (!own(LIMITS, mode)) fail('Escolha um modo de desafio válido.');
@@ -137,10 +145,8 @@
       return today;
     }
 
-    function targets(mode, date) {
-      var key = mode + '|' + date;
-      if (generationCache.has(key)) return generationCache.get(key);
-      var next = randomIndex(DATASET_ID + '|' + key);
+    function legacyTargets(mode, date) {
+      var next = randomIndex(DATASET_ID + '|' + mode + '|' + date);
       var selected;
       if (mode === 'anidle') selected = { targetAnime: anime[next(anime.length)] };
       else {
@@ -157,6 +163,144 @@
         if (picked.length < 4) pool.forEach(function (item) { if (picked.length < 4 && !picked.includes(item)) picked.push(item); });
         selected = { characters: picked };
       }
+      return selected;
+    }
+
+    function shuffled(items, seed) {
+      var pool = items.slice();
+      var next = randomIndex(seed);
+      for (var index = pool.length - 1; index > 0; index--) {
+        var other = next(index + 1);
+        var item = pool[index]; pool[index] = pool[other]; pool[other] = item;
+      }
+      return pool;
+    }
+
+    // Reordering a cycle only defers its entries: every ID is consumed once.
+    function diverseOrder(items, offset) {
+      var remaining = items.slice();
+      var result = [];
+      var works = new Set();
+      var slot = offset;
+      while (remaining.length) {
+        var index = remaining.findIndex(function (item) { return !works.has(item.animeId); });
+        if (index < 0) index = 0;
+        var item = remaining.splice(index, 1)[0];
+        result.push(item); works.add(item.animeId);
+        slot++;
+        if (slot === 4) { slot = 0; works.clear(); }
+      }
+      return result;
+    }
+
+    function prepareSchedules() {
+      if (schedulePools) return;
+      var used = { characters: new Set(), anidle: new Set() };
+      ['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23'].forEach(function (date) {
+        legacyTargets('characters', date).characters.forEach(function (item) { used.characters.add(item.id); });
+        used.anidle.add(legacyTargets('anidle', date).targetAnime.id);
+      });
+      schedulePools = {};
+      ['characters', 'anidle'].forEach(function (mode) {
+        var full = mode === 'characters' ? characters : anime.filter(isSeries);
+        schedulePools[mode] = { full: full, first: full.filter(function (item) { return !used[mode].has(item.id); }) };
+      });
+    }
+
+    function cachedCycle(key, build) {
+      if (cycleCache.has(key)) return cycleCache.get(key);
+      var items = build();
+      cycleCache.set(key, items);
+      if (cycleCache.size > 24) cycleCache.delete(cycleCache.keys().next().value);
+      return items;
+    }
+
+    function cycleOffset(mode, number) {
+      var pools = schedulePools[mode];
+      return mode === 'characters' && number > 0 ? (pools.first.length + (number - 1) * pools.full.length) % 4 : 0;
+    }
+
+    function baseCycle(mode, number) {
+      return cachedCycle(mode + '|base|' + number, function () {
+        var pools = schedulePools[mode];
+        var items = shuffled(number === 0 ? pools.first : pools.full, SCHEDULE_ID + '|' + mode + '|cycle|' + number);
+        return mode === 'characters' ? diverseOrder(items, cycleOffset(mode, number)) : items;
+      });
+    }
+
+    function previousCycleTail(mode, number) {
+      var previous = baseCycle(mode, number - 1);
+      if (previous.length) return previous.slice(-4);
+      var legacy = legacyTargets(mode, '2026-10-23');
+      return mode === 'characters' ? legacy.characters : [legacy.targetAnime];
+    }
+
+    function arrangeBoundary(mode, items, previous, offset, protectedTail) {
+      var result = items.slice();
+      var prefixLength = Math.min(mode === 'characters' ? 4 - offset : 1, result.length);
+      var recent = new Set(previous.map(function (item) { return item.id; }));
+      var sameDay = mode === 'characters' && offset ? previous.slice(-offset) : [];
+      var required = new Set(sameDay.map(function (item) { return item.id; }));
+      var works = new Set(sameDay.map(function (item) { return item.animeId; }));
+      var mutableEnd = result.length - protectedTail;
+      for (var index = 0; index < prefixLength; index++) {
+        var best = -1;
+        var bestRank = Infinity;
+        for (var candidate = index; candidate < mutableEnd; candidate++) {
+          var item = result[candidate];
+          if (required.has(item.id)) continue;
+          var rank = Number(recent.has(item.id)) * 2 + Number(mode === 'characters' && works.has(item.animeId));
+          if (rank < bestRank) { best = candidate; bestRank = rank; }
+          if (rank === 0) break;
+        }
+        if (best < 0) fail('O catálogo não possui personagens suficientes para esse desafio.');
+        var selected = result[best]; result[best] = result[index]; result[index] = selected;
+        if (mode === 'characters') works.add(selected.animeId);
+      }
+      if (mode === 'characters') {
+        result = result.slice(0, prefixLength).concat(diverseOrder(result.slice(prefixLength, mutableEnd), 0), result.slice(mutableEnd));
+      }
+      return result;
+    }
+
+    function cycle(mode, number) {
+      if (number === 0) return baseCycle(mode, number);
+      var pools = schedulePools[mode];
+      // Tiny fixtures use one recurring permutation. This also guarantees four
+      // different IDs on a day that straddles cycles when only four exist.
+      if (pools.full.length < 12) return cachedCycle(mode + '|small', function () {
+        return arrangeBoundary(mode, baseCycle(mode, 1), previousCycleTail(mode, 1), cycleOffset(mode, 1), 0);
+      });
+      return cachedCycle(mode + '|cycle|' + number, function () {
+        // Preserve the final four entries, so the previous tail is available
+        // directly from its base permutation without replaying prior cycles.
+        return arrangeBoundary(mode, baseCycle(mode, number), previousCycleTail(mode, number), cycleOffset(mode, number), 4);
+      });
+    }
+
+    function scheduledTargets(mode, date) {
+      prepareSchedules();
+      var pools = schedulePools[mode];
+      if (!pools.full.length) fail('O catálogo não contém séries disponíveis para o Anidle.');
+      var count = mode === 'characters' ? 4 : 1;
+      var dayIndex = Math.floor((Date.parse(date + 'T00:00:00Z') - Date.parse(SCHEDULE_START + 'T00:00:00Z')) / 86400000);
+      var position = dayIndex * count;
+      var picked = [];
+      while (picked.length < count) {
+        var number = position < pools.first.length ? 0 : 1 + Math.floor((position - pools.first.length) / pools.full.length);
+        var index = number === 0 ? position : (position - pools.first.length) % pools.full.length;
+        var items = cycle(mode, number);
+        var take = Math.min(count - picked.length, items.length - index);
+        picked = picked.concat(items.slice(index, index + take));
+        position += take;
+      }
+      return mode === 'characters' ? { characters: picked } : { targetAnime: picked[0] };
+    }
+
+    function targets(mode, date) {
+      var key = mode + '|' + date;
+      if (generationCache.has(key)) return generationCache.get(key);
+      var selected = date < SCHEDULE_START ? legacyTargets(mode, date) : scheduledTargets(mode, date);
       generationCache.set(key, selected);
       if (generationCache.size > 128) generationCache.delete(generationCache.keys().next().value);
       return selected;
@@ -184,7 +328,7 @@
       return { character: cleanText(value.character, 200, 'O nome respondido', true), animeId: id, animeText: cleanText(value.animeText, 300, 'A obra respondida', true) };
     }
 
-    function actionValue(action, mode, requiresId) {
+    function actionValue(action, mode, requiresId, date) {
       object(action, 'A jogada');
       var result;
       if (action.kind === 'giveup') result = { kind: 'giveup' };
@@ -195,6 +339,7 @@
       } else if (mode === 'anidle' && action.kind === 'anime') {
         var id = mediaId(action.animeId, 'O palpite');
         if (!animeById.has(id)) fail('Escolha um anime disponível no catálogo.');
+        if (date >= SCHEDULE_START && !isSeries(animeById.get(id))) fail('Neste Anidle, escolha uma série de TV ou online; OVA, filmes e especiais não participam.');
         result = { kind: 'anime', animeId: id };
       } else fail('Essa jogada não pertence ao desafio selecionado.');
       if (requiresId) {
@@ -203,10 +348,10 @@
       return result;
     }
 
-    function attemptValue(value, mode) {
+    function attemptValue(value, mode, date) {
       object(value, 'Uma tentativa salva');
       if (value.giveup === true) return { giveup: true };
-      var action = actionValue(mode === 'characters' ? { kind: 'characters', answers: value.answers } : { kind: 'anime', animeId: value.animeId }, mode, false);
+      var action = actionValue(mode === 'characters' ? { kind: 'characters', answers: value.answers } : { kind: 'anime', animeId: value.animeId }, mode, false, date);
       return mode === 'characters' ? { answers: action.answers } : { animeId: action.animeId };
     }
 
@@ -217,7 +362,7 @@
 
     function initialDay(mode, date) {
       var selected = targets(mode, date);
-      var day = { version: 1, mode: mode, date: date, datasetId: DATASET_ID, attempts: [], completed: false, gaveUp: false, score: 0, wins: 0, attemptsUsed: 0 };
+      var day = { version: 1, mode: mode, date: date, datasetId: scheduleId(date), attempts: [], completed: false, gaveUp: false, score: 0, wins: 0, attemptsUsed: 0 };
       if (mode === 'characters') day.characters = selected.characters.map(function (item) { return { target: item, characterGuess: '', animeGuess: '', animeId: null, characterCorrect: false, animeCorrect: false }; });
       else day.targetAnime = selected.targetAnime;
       return day;
@@ -255,7 +400,7 @@
     }
 
     function compact(day, requests) {
-      return { version: 1, mode: day.mode, date: day.date, dateNumber: Number(day.date.replace(/-/g, '')), month: day.date.slice(0, 7), datasetId: DATASET_ID, attempts: clone(day.attempts), completed: day.completed, score: day.score, wins: day.wins, requests: clone(requests) };
+      return { version: 1, mode: day.mode, date: day.date, dateNumber: Number(day.date.replace(/-/g, '')), month: day.date.slice(0, 7), datasetId: scheduleId(day.date), attempts: clone(day.attempts), completed: day.completed, score: day.score, wins: day.wins, requests: clone(requests) };
     }
 
     function read(raw, mode, date, today) {
@@ -264,12 +409,12 @@
       var requests = [];
       if (raw !== null && raw !== undefined) {
         object(raw, 'O progresso salvo');
-        if (raw.version !== 1 || raw.mode !== mode || raw.date !== date || raw.datasetId !== DATASET_ID || raw.month !== date.slice(0, 7) || raw.dateNumber !== Number(date.replace(/-/g, ''))) fail('O progresso pertence a outro desafio ou edição.');
+        if (raw.version !== 1 || raw.mode !== mode || raw.date !== date || raw.datasetId !== scheduleId(raw.date) || raw.month !== date.slice(0, 7) || raw.dateNumber !== Number(date.replace(/-/g, ''))) fail('O progresso pertence a outro desafio ou edição. Atualize o site para usar a edição correta desta data.');
         if (!Array.isArray(raw.attempts) || raw.attempts.length > LIMITS[mode] + 1 || !Array.isArray(raw.requests) || raw.requests.length !== raw.attempts.length || raw.requests.length > 23) fail('As tentativas salvas possuem formato inválido.');
         var ids = new Set();
         var fingerprints = new Set();
         raw.attempts.forEach(function (entry, index) {
-          var attempt = attemptValue(entry, mode);
+          var attempt = attemptValue(entry, mode, date);
           var request = object(raw.requests[index], 'Uma solicitação salva');
           var fingerprint = JSON.stringify(attemptAction(attempt, mode));
           if (typeof request.id !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(request.id) || ids.has(request.id) || request.fingerprint !== fingerprint || fingerprints.has(fingerprint)) fail('O histórico de solicitações do desafio é inválido.');
@@ -284,7 +429,7 @@
 
     function apply(raw, mode, date, action, today) {
       var result = read(raw, mode, date, today);
-      var value = actionValue(action, mode, true);
+      var value = actionValue(action, mode, true, date);
       var fingerprint = JSON.stringify(value);
       var repeated = result.record.requests.find(function (request) { return request.id === action.id; });
       if (repeated) {
@@ -347,7 +492,7 @@
     function view(day) {
       object(day, 'O desafio');
       validMode(day.mode);
-      var result = { mode: day.mode, date: day.date, datasetId: DATASET_ID, completed: day.completed, gaveUp: day.gaveUp, score: day.score, wins: day.wins, attemptsUsed: day.attemptsUsed, maxAttempts: LIMITS[day.mode], remaining: LIMITS[day.mode] - day.attemptsUsed, canSubmit: !day.completed, maxScore: day.mode === 'characters' ? 8 : 22 };
+      var result = { mode: day.mode, date: day.date, datasetId: scheduleId(day.date), completed: day.completed, gaveUp: day.gaveUp, score: day.score, wins: day.wins, attemptsUsed: day.attemptsUsed, maxAttempts: LIMITS[day.mode], remaining: LIMITS[day.mode] - day.attemptsUsed, canSubmit: !day.completed, maxScore: day.mode === 'characters' ? 8 : 22 };
       if (day.mode === 'characters') {
         result.cards = day.characters.map(function (card, index) {
           return { slot: index, imageUrl: card.target.imageUrl, characterGuess: card.characterGuess, animeGuess: card.animeGuess, animeId: card.animeId, characterCorrect: card.characterCorrect, animeCorrect: card.animeCorrect, characterName: day.completed ? card.target.name : null, animeTitle: day.completed ? card.target.animeTitle : null };
@@ -385,13 +530,20 @@
       return { today: today, startDate: START_DATE, day: view(day), streak: D.streak(state, today), days: dates };
     }
 
-    function searchAnime(query, limit) {
+    function searchAnime(query, limit, context) {
       var term = normalized(cleanText(query, 300, 'A pesquisa', true));
       limit = limit === undefined ? 8 : limit;
       if (!Number.isInteger(limit) || limit < 1 || limit > 50) fail('O limite da pesquisa é inválido.');
+      var pool = anime;
+      if (context !== undefined) {
+        object(context, 'O contexto da pesquisa');
+        validMode(context.mode);
+        D.validateDate(context.date);
+        if (context.mode === 'anidle' && context.date >= SCHEDULE_START) pool = anime.filter(isSeries);
+      }
       if (!term) return [];
       var compactTerm = term.replace(/ /g, '');
-      return anime.map(function (item) {
+      return pool.map(function (item) {
         var names = [item.title].concat(item.aliases).map(normalized);
         var rank = names.reduce(function (best, name) {
           var value = name === term ? 0 : name.startsWith(term) ? 1 : name.includes(term) || name.replace(/ /g, '').includes(compactTerm) ? 2 : term.split(' ').every(function (word) { return name.includes(word); }) ? 3 : Infinity;
@@ -428,5 +580,5 @@
     return { read: read, apply: apply, view: view, response: response, searchAnime: searchAnime, searchCharacters: searchCharacters, compareAnime: compareAnime, summary: summary, datasetInfo: datasetInfo };
   }
 
-  return { START_DATE: START_DATE, DATASET_ID: DATASET_ID, createEngine: createEngine, normalizeText: normalized };
+  return { START_DATE: START_DATE, DATASET_ID: DATASET_ID, SCHEDULE_START: SCHEDULE_START, SCHEDULE_ID: SCHEDULE_ID, createEngine: createEngine, normalizeText: normalized };
 });
