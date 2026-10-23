@@ -49,9 +49,14 @@
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 20000);
       try {
-        const response = await fetch('mini-data.json?v=mini-2026-10-20-v1', { signal: controller.signal });
-        if (!response.ok) throw Error('Não foi possível carregar o catálogo dos desafios.');
-        engine = window.SorteioMiniCore.createEngine({ dataset: await response.json(), D });
+        const responses = await Promise.all([
+          fetch('mini-data.json?v=mini-2026-10-20-v1', { signal: controller.signal }),
+          fetch('character-levels.json?v=characters-2026-10-24-v3', { signal: controller.signal })
+        ]);
+        if (!responses[0].ok) throw Error('Não foi possível carregar o catálogo dos desafios.');
+        if (!responses[1].ok) throw Error('Não foi possível carregar os níveis de personagens. Atualize a página e tente novamente.');
+        const [dataset, characterLevels] = await Promise.all(responses.map((response) => response.json()));
+        engine = window.SorteioMiniCore.createEngine({ dataset, D, characterLevels });
         return engine;
       } finally { clearTimeout(timer); }
     })().catch((error) => { engineTask = null; throw error; });
@@ -60,7 +65,7 @@
   function header(game = mode) {
     if (!labels[game]) return;
     $('#guessr-title').textContent = labels[game];
-    $('#guessr-intro').textContent = game === 'characters' ? 'Acerte o nome e a obra dos quatro personagens.' : 'Descubra o anime pelas pistas de cada palpite.';
+    $('#guessr-intro').textContent = game === 'characters' ? 'Acerte o nome e a obra. Responda só o que souber.' : 'Descubra o anime pelas pistas de cada palpite.';
     $('#guessr-mode').hidden = false;
     $('#guessr-mode').textContent = 'Diário';
     $('#guessr-profiles').hidden = true;
@@ -100,6 +105,8 @@
     if (!active || loading || !current || !available()) return;
     const token = generation;
     const before = current.attemptsUsed;
+    const beforeLevel = current.levelIndex;
+    const beforeLevelCompleted = current.levelCompleted;
     const wasCompleted = current.completed;
     const request = action.id ? action : { ...action, id: crypto.randomUUID() };
     pending = request; loading = true; message = ''; messageError = false; render();
@@ -119,8 +126,8 @@
           const response = await C.getMiniDay(mode, date);
           if (token !== generation) return;
           pending = null; accept(response);
-          if (response.day.attemptsUsed > before || response.day.completed && !wasCompleted) { message = 'Progresso recuperado.'; return; }
-          if (response.day.attemptsUsed === before && request.kind === 'characters') drafts = request.answers.map((answer) => ({ character: answer.character, animeText: answer.animeText, animeId: answer.animeId }));
+          if (response.day.attemptsUsed > before || response.day.completed && !wasCompleted || response.day.levelIndex !== beforeLevel || response.day.levelCompleted && !beforeLevelCompleted) { message = 'Progresso recuperado.'; return; }
+          if (response.day.attemptsUsed === before && request.kind === 'characters' && response.day.levelIndex === beforeLevel) drafts = request.answers.map((answer) => ({ character: answer.character, animeText: answer.animeText, animeId: answer.animeId }));
         } catch (_) { /* Keep the exact request ID available for retry. */ }
       } else pending = null;
       message = error.message || 'Não foi possível salvar o palpite.'; messageError = true;
@@ -177,16 +184,24 @@
   }
   function renderCharacters() {
     if (!current?.cards) return;
+    const hasLevels = Array.isArray(current.levels) && current.levels.length > 1;
+    const levelClosed = current.completed || current.levelCompleted;
+    const levelAttempts = current.levelAttemptsUsed ?? current.attemptsUsed;
+    const levels = $('#mini-character-levels');
+    levels.hidden = !hasLevels;
+    levels.innerHTML = hasLevels ? current.levels.map((level) => '<li class="' + (level.index === current.levelIndex && !current.completed ? 'is-active ' : '') + (level.completed ? 'is-complete' : '') + '"' + (level.index === current.levelIndex && !current.completed ? ' aria-current="step"' : '') + '><span>' + (level.index + 1) + '</span><strong>' + escape(level.name) + '</strong><small>' + (level.completed ? level.score + ' / ' + level.maxScore : '4 personagens') + '</small></li>').join('') : '';
     $('#mini-character-cards').innerHTML = current.cards.map((card, i) => {
       const draft = drafts[i] || {};
       const character = card.characterCorrect ? card.characterGuess : draft.character ?? card.characterGuess;
       const anime = card.animeCorrect ? card.animeGuess : draft.animeText ?? card.animeGuess;
-      const disabled = current.completed || loading || !!pending;
+      const disabled = levelClosed || loading || !!pending;
+      const position = current.completed ? i + 1 : (hasLevels ? current.levelIndex * 4 : 0) + i + 1;
       const field = (type, value, correct, placeholder) => {
         const popup = 'mini-' + type + '-options-' + i;
-        return '<div class="mini-character-field' + (correct ? ' is-correct' : current.attemptsUsed && value ? ' is-wrong' : '') + '"><label class="sr-only" for="mini-' + type + '-' + i + '">' + placeholder + ' ' + (i + 1) + '</label><input id="mini-' + type + '-' + i + '" data-slot="' + i + '" data-field="' + type + '" value="' + escape(value || '') + '" placeholder="' + placeholder + '" maxlength="200" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="' + popup + '"' + (disabled || correct ? ' disabled' : '') + '>' + (correct ? '<span class="mini-field-mark" aria-label="Correto">✓</span>' : '') + '<div id="' + popup + '" class="mini-suggestions' + (type === 'name' ? ' mini-name-suggestions' : '') + '" role="listbox" aria-label="' + (type === 'name' ? 'Personagens encontrados' : 'Animes encontrados') + '" hidden></div></div>';
+        return '<div class="mini-character-field' + (correct ? ' is-correct' : levelAttempts && value ? ' is-wrong' : '') + '"><label class="sr-only" for="mini-' + type + '-' + i + '">' + placeholder + ' ' + position + '</label><input id="mini-' + type + '-' + i + '" data-slot="' + i + '" data-field="' + type + '" value="' + escape(value || '') + '" placeholder="' + placeholder + '" maxlength="200" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="' + popup + '"' + (disabled || correct ? ' disabled' : '') + '>' + (correct ? '<span class="mini-field-mark" aria-label="Correto">✓</span>' : '') + '<div id="' + popup + '" class="mini-suggestions' + (type === 'name' ? ' mini-name-suggestions' : '') + '" role="listbox" aria-label="' + (type === 'name' ? 'Personagens encontrados' : 'Animes encontrados') + '" hidden></div></div>';
       };
-      return '<article class="mini-character-card"><div class="mini-character-image"><img src="' + escape(card.imageUrl || 'poster-placeholder.svg') + '" alt="Personagem ' + (i + 1) + '" referrerpolicy="no-referrer"><span>0' + (i + 1) + '</span></div>' + field('name', character, card.characterCorrect, 'Nome do personagem') + field('work', anime, card.animeCorrect, 'Anime / obra') + (current.completed ? '<div class="mini-character-answer"><strong>' + escape(card.characterName) + '</strong><span>' + escape(card.animeTitle) + '</span></div>' : '') + '</article>';
+      const group = hasLevels && current.completed && i % 4 === 0 ? '<h3 class="mini-character-group">' + escape(current.levels[Math.floor(i / 4)].name) + '</h3>' : '';
+      return group + '<article class="mini-character-card"><div class="mini-character-image"><img src="' + escape(card.imageUrl || 'poster-placeholder.svg') + '" alt="Personagem ' + position + '" referrerpolicy="no-referrer"><span>' + String(position).padStart(2, '0') + '</span></div>' + field('name', character, card.characterCorrect, 'Nome do personagem') + field('work', anime, card.animeCorrect, 'Anime / obra') + (levelClosed ? '<div class="mini-character-answer"><strong>' + escape(card.characterName) + '</strong><span>' + escape(card.animeTitle) + '</span></div>' : '') + '</article>';
     }).join('');
     current.cards.forEach((card, i) => {
       const nameInput = $('#mini-name-' + i);
@@ -254,17 +269,22 @@
     const streak = meta?.streak || { current: 0, best: 0 };
     $('#mini-streak').textContent = streak.current; $('#mini-best').textContent = streak.best; $('#mini-streak-unit').textContent = streak.current === 1 ? 'dia' : 'dias';
     if (!current) return;
-    $('#mini-attempts').textContent = current.completed ? 'Desafio encerrado' : 'Tentativa ' + Math.min(current.maxAttempts, current.attemptsUsed + 1) + ' / ' + current.maxAttempts;
-    $('#mini-progress').textContent = mode === 'characters' ? current.score + ' / 8 campos' : current.attemptsUsed + ' / 22 palpites';
+    const characterLevels = mode === 'characters' && Array.isArray(current.levels) && current.levels.length > 1;
+    const attempts = characterLevels ? current.levelAttemptsUsed : current.attemptsUsed;
+    $('#mini-attempts').textContent = current.completed ? 'Desafio encerrado' : characterLevels && current.levelCompleted ? current.levelName + ' concluído' : (characterLevels ? current.levelName + ' · ' : '') + 'Tentativa ' + Math.min(current.maxAttempts, attempts + 1) + ' / ' + current.maxAttempts;
+    $('#mini-progress').textContent = mode === 'characters' ? current.score + ' / ' + current.maxScore + ' pontos' : current.attemptsUsed + ' / 22 palpites';
     $('#mini-character-form').hidden = mode !== 'characters'; $('#mini-anidle-panel').hidden = mode !== 'anidle';
     if (mode === 'characters') {
       renderCharacters();
-      $('#mini-character-submit').hidden = current.completed; $('#mini-character-submit').disabled = loading || !!pending;
+      $('#mini-character-submit').hidden = current.completed || !!current.levelCompleted; $('#mini-character-submit').disabled = loading || !!pending;
+      $('#mini-character-next').hidden = !characterLevels || current.completed || !current.levelCompleted;
+      $('#mini-character-next').disabled = loading || !!pending;
+      $('#mini-character-next').textContent = 'Próximo nível' + (characterLevels && current.levels[current.levelIndex + 1] ? ': ' + current.levels[current.levelIndex + 1].name : '');
       $('#mini-character-giveup').hidden = current.completed; $('#mini-character-giveup').disabled = loading || !!pending;
     } else renderAnidle();
     $('#mini-finished').hidden = !current.completed;
-    $('#mini-finished-title').textContent = mode === 'characters' ? current.score === 8 ? 'Todos os campos certos!' : 'Desafio concluído' : current.wins ? 'Anime encontrado!' : 'Era ' + current.answer?.title;
-    $('#mini-finished-description').textContent = mode === 'characters' ? current.wins + '/4 personagens completos · ' + current.score + '/8 pontos' : current.score + '/22 pontos · ' + current.attemptsUsed + (current.attemptsUsed === 1 ? ' palpite' : ' palpites');
+    $('#mini-finished-title').textContent = mode === 'characters' ? current.score === current.maxScore ? 'Todos os campos certos!' : 'Desafio concluído' : current.wins ? 'Anime encontrado!' : 'Era ' + current.answer?.title;
+    $('#mini-finished-description').textContent = mode === 'characters' ? current.wins + '/' + (current.totalCharacters || 4) + ' personagens completos · ' + current.score + '/' + current.maxScore + ' pontos' : current.score + '/22 pontos · ' + current.attemptsUsed + (current.attemptsUsed === 1 ? ' palpite' : ' palpites');
     $('#mini-ranking').hidden = !online;
   }
   $('#mini-character-cards').addEventListener('input', (event) => {
@@ -275,15 +295,24 @@
   });
   $('#mini-character-cards').addEventListener('error', (event) => { if (event.target.tagName === 'IMG') event.target.parentElement.classList.add('mini-image-error'); }, true);
   $('#mini-character-form').addEventListener('submit', (event) => {
-    event.preventDefault(); if (!current || loading || current.completed || pending) return;
-    const answers = current.cards.map((card, i) => ({ character: $('#mini-name-' + i).value, animeText: $('#mini-work-' + i).value, animeId: drafts[i] && Object.hasOwn(drafts[i], 'animeId') ? drafts[i].animeId : card.animeId ?? null }));
-    play({ kind: 'characters', answers });
+    event.preventDefault(); if (!current || loading || current.completed || current.levelCompleted || pending) return;
+    const answers = current.cards.map((card, i) => {
+      const animeText = $('#mini-work-' + i).value;
+      const draft = drafts[i];
+      const animeId = !animeText.trim() ? null : draft && Object.hasOwn(draft, 'animeId') ? (draft.animeText === animeText ? draft.animeId : null) : card.animeGuess === animeText ? card.animeId ?? null : null;
+      return { character: $('#mini-name-' + i).value, animeText, animeId };
+    });
+    play({ kind: 'characters', answers, ...(Number.isInteger(current.levelIndex) ? { levelIndex: current.levelIndex } : {}) });
+  });
+  $('#mini-character-next').addEventListener('click', () => {
+    if (current?.levelCompleted && !current.completed && !loading && !pending) play({ kind: 'next_level', levelIndex: current.levelIndex });
   });
   $('#mini-anime-input').addEventListener('input', () => { selectedAnime = null; $('#mini-anime-submit').disabled = true; });
   $('#mini-anidle-form').addEventListener('submit', (event) => { event.preventDefault(); if (selectedAnime && !loading && !current?.completed && !pending) play({ kind: 'anime', animeId: selectedAnime.id }); });
   function giveup() {
     if (!current || loading || current.completed || pending) return;
-    A.confirm('Encerrar o desafio de hoje?', 'As respostas serão reveladas e o resultado será salvo. Você poderá revisar este dia pelo calendário.', () => play({ kind: 'giveup' }), 'Encerrar desafio');
+    const description = mode === 'characters' && current.totalCharacters === 12 ? 'Os três níveis serão encerrados, as respostas reveladas e o resultado salvo. Você poderá revisar este dia pelo calendário.' : 'As respostas serão reveladas e o resultado será salvo. Você poderá revisar este dia pelo calendário.';
+    A.confirm('Encerrar o desafio de hoje?', description, () => play({ kind: 'giveup' }), 'Encerrar desafio');
   }
   $('#mini-character-giveup').addEventListener('click', giveup); $('#mini-anidle-giveup').addEventListener('click', giveup);
   $('#mini-date').addEventListener('change', () => loadDay($('#mini-date').value)); $('#mini-today').addEventListener('click', () => loadDay(today()));

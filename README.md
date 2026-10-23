@@ -10,6 +10,8 @@ Um clube de anime com três roletas editáveis: **amigo → carta especial → a
 
 **Personagens e Anidle sem repetições:** o guia `ATUALIZAR-DESAFIOS-SEM-REPETICAO.md` acompanha `atualizacao-desafios-sem-repeticao.zip`. A partir de 24/10/2026, os jogos passam a consumir o catálogo sem reposição; o Anidle usa apenas séries de TV e de streaming. Publique as regras incluídas para salvar a nova edição online.
 
+**Atualização mais recente — níveis de Personagens:** use `atualizacao-personagens-niveis.zip` e o guia `ATUALIZAR-PERSONAGENS-NIVEIS.md` para os três níveis e o envio com campos em branco. A partir de 24/10/2026 são 12 personagens e até 24 pontos por dia. Essa edição substitui o sorteio de quatro personagens nessa data em diante e mantém as configurações do Anidle.
+
 ## Testar no computador
 
 Extraia todos os arquivos para a mesma pasta e abra `index.html` em um navegador atualizado. Mantenha todos os arquivos entregues, incluindo `styles.css`, `core.js`, `catalog.js`, `app.js`, `guessr-core.js`, `daily-core.js`, `spark-core.js`, `daily-data.json`, `daily-cap.json`, `daily-kv.json`, `daily-nando.json`, `guessr.js`, `mini-core.js`, `mini-games.js`, `mini.css`, `mini-data.json`, `cloud-client.js`, `account.js`, `poster-placeholder.svg` e `favicon.svg`. O arquivo `firebase-config.js` pertence à configuração do seu site e precisa continuar ao lado de `index.html`. Não é necessário instalar Node.js, usar terminal ou contratar servidor. Para uma primeira instalação, o preparo do Firebase é explicado no guia `TUTORIAL-FIREBASE-GRATUITO.md`. As roletas e a edição manual funcionam sem consultas externas; busca, capas remotas, notas pessoais e carregamento das pistas do Guessr Livre precisam de internet.
@@ -122,11 +124,13 @@ No modo local, o progresso, a pontuação diária e a sequência ficam somente n
 
 ### Personagens — desafio diário
 
-A partir de **24/10/2026**, o sorteio usa ciclos sem reposição: um personagem só pode reaparecer depois que todos os personagens do catálogo tiverem sido usados. Os personagens exibidos de 20 a 23/10 já contam como usados no primeiro ciclo. Cada dia continua mostrando quatro personagens distintos, com preferência por obras diferentes quando houver opções. Quando o catálogo se esgota, começa um novo ciclo.
+A partir de **24/10/2026**, o desafio tem três níveis na ordem **Fácil → Médio → Difícil**, com quatro personagens em cada um. O sorteio usa ciclos sem reposição em cada nível: um personagem só pode reaparecer depois que todos daquele nível tiverem sido usados. Os personagens exibidos de 20 a 23/10 já contam como usados no primeiro ciclo do seu nível. As três listas são separadas, portanto nenhum personagem aparece em dois níveis no mesmo dia.
 
-São **4 personagens por data**. Digite o **nome do personagem** e o **anime ao qual pertence** em cada cartão. O nome e a obra valem **1 ponto cada**, até **8 pontos** por desafio. Os dois campos oferecem sugestões: a busca de personagens reconhece os nomes alternativos e a de animes reconhece títulos equivalentes. Selecione com o mouse ou com as setas e Enter; escolher uma sugestão apenas preenche o campo, sem gastar tentativa.
+São **12 personagens por data**, mostrados em grupos de quatro. Digite o **nome do personagem** e o **anime ao qual pertence** em cada cartão. O nome e a obra valem **1 ponto cada**: oito pontos por nível e até **24 pontos** no dia. Os dois campos oferecem sugestões: a busca de personagens reconhece os nomes alternativos e a de animes reconhece títulos equivalentes. Selecione com o mouse ou com as setas e Enter; escolher uma sugestão apenas preenche o campo, sem gastar tentativa.
 
-Você pode fazer **até 3 envios para o conjunto dos quatro cartões**, e não três envios por personagem. As respostas certas ficam marcadas e você continua tentando as partes que faltam. Ao acertar tudo ou esgotar os envios, o jogo termina e mostra as respostas. Não há modo Livre ou infinito para Personagens.
+Você pode fazer **até três envios por nível**, para os quatro cartões juntos. **Pode enviar respostas parciais ou deixar todos os campos em branco**; cada envio novo usa uma tentativa. Os campos corretos ficam travados e os campos em branco ficam disponíveis nas tentativas seguintes. Ao acertar os oito campos ou usar as três tentativas, as respostas daquele nível são reveladas e o botão **Próximo nível** libera a etapa seguinte, mesmo que você tenha errado tudo. O desafio só termina ao concluir o Difícil ou usar **Encerrar desafio**, que mantém os pontos já obtidos. Apenas o resultado final do dia entra no ranking.
+
+As dificuldades são uma aproximação baseada na ordem pública de favoritos dos personagens no AniList, registrada na coleta original: os 107 primeiros formam o Fácil, os 107 seguintes o Médio e os 106 restantes o Difícil. Essa divisão fica congelada em `character-levels.json`, sem consultar ou mudar a ordem ao vivo. Os desafios de 20 a 23/10 continuam com os quatro personagens e o máximo de oito pontos originais.
 
 ### Anidle — desafio diário
 
@@ -146,7 +150,7 @@ Sem Firebase ativo, esses dois jogos guardam o progresso somente no navegador, n
 
 Preserve `mini-data.json` e seu identificador `mini-2026-10-20-v1` nas próximas atualizações. Trocar a base sem versionamento pode mudar desafios de datas já jogadas.
 
-Os desafios de **20 a 23/10** mantêm exatamente os alvos, buscas e progresso originais, inclusive o OVA que já saiu nesse período. A edição de sorteio **`mini-2026-10-24-v2`** vale para datas a partir de 24/10 e usa o mesmo catálogo imutável. A ordem dos ciclos depende apenas da data e dessa edição, sendo igual no modo local e no online, para todos os jogadores. O calendário continua permitindo recuperar os dias anteriores sem mudar resultados, pontuações ou sequências. Atualize `mini-core.js`, `mini-games.js`, `index.html` e as regras do Firestore juntos; elas impedem que versões antigas salvem outros alvos nos dias da nova edição.
+Os desafios de **20 a 23/10** mantêm exatamente os alvos, buscas e progresso originais, inclusive o OVA que já saiu nesse período. Para datas a partir de 24/10, o Anidle usa a edição **`mini-2026-10-24-v2`** e Personagens usa **`characters-2026-10-24-v3`**, com `character-levels.json`; ambos usam o catálogo imutável original. A ordem dos ciclos depende apenas da data e da edição, sendo igual no modo local e no online, para todos os jogadores. O calendário continua permitindo recuperar os dias anteriores sem mudar resultados, pontuações ou sequências. Atualize todos os arquivos do pacote e as regras do Firestore juntos; elas impedem que versões antigas salvem outros alvos nos dias da nova edição.
 
 ### Login, progresso online e rankings
 
@@ -160,7 +164,7 @@ Quem conhece a senha atual pode usar **Minha conta → Trocar senha**. Como os e
 
 Cada desafio online guarda **uma partida por conta, por jogo e por data**. Entrar na mesma conta em outro dispositivo recupera o progresso e a sequência de cada jogo. O progresso antigo salvo somente no navegador não é importado automaticamente. A pontuação é calculada no navegador e salva no Firestore: esta versão foi feita para um grupo de amigos que confia nos resultados enviados, sem verificação contra trapaça em servidor.
 
-Na aba **Ranking**, selecione **Notas**, **Personagens** ou **Anidle** e depois o período **diário** ou **mensal**. Os rankings são separados por jogo: cada dia concluído vale até **15 pontos em Notas**, **8 em Personagens** e **22 em Anidle**. O calendário segue **America/Sao_Paulo**. Datas anteriores, inclusive de meses passados, continuam abertas; a pontuação é atribuída à data e ao mês do desafio, não ao dia em que você decidiu recuperar a partida. Os novos jogos exigem as regras atualizadas do arquivo `firebase-gratuito/firestore.rules`.
+Na aba **Ranking**, selecione **Notas**, **Personagens** ou **Anidle** e depois o período **diário** ou **mensal**. Os rankings são separados por jogo: cada dia concluído vale até **15 pontos em Notas**, **24 em Personagens** a partir de 24/10 (oito nos dias anteriores) e **22 em Anidle**. O calendário segue **America/Sao_Paulo**. Datas anteriores, inclusive de meses passados, continuam abertas; a pontuação é atribuída à data e ao mês do desafio, não ao dia em que você decidiu recuperar a partida. Os novos jogos exigem as regras atualizadas do arquivo `firebase-gratuito/firestore.rules`.
 
 O Spark tem cotas gratuitas. O uso de um grupo pequeno tende a ficar bem abaixo delas; acompanhe o painel **Firestore → Usage**. Sem ativar faturamento, atingir uma cota pode interromper o serviço até sua renovação, em vez de gerar cobrança por excedente. Veja os [planos do Firebase](https://firebase.google.com/docs/projects/billing/firebase-pricing-plans) e as [cotas do Firestore](https://firebase.google.com/docs/firestore/quotas).
 
@@ -215,6 +219,7 @@ O Tenrai substitui a API pública do Jikan, encerrada em **1º de outubro de 202
 - `mini-games.js`: telas, calendário, palpites e progresso dos dois novos desafios.
 - `mini.css`: aparência dos cartões de personagens e da tabela de comparações do Anidle.
 - `mini-data.json`: base fixa de 851 animes e 320 personagens do AniList, identificada como `mini-2026-10-20-v1`.
+- `character-levels.json`: divisão fixa dos 320 personagens em Fácil, Médio e Difícil para a edição `characters-2026-10-24-v3`.
 - `firebase-config.js`: configuração pública do seu projeto Firebase e ativação do modo online.
 - `cloud-client.js`: cliente Firebase pronto para o navegador, conectado diretamente ao Authentication e ao Firestore.
 - `spark-core.js`: progresso e resultados do Diário online, com proteção contra registros duplicados.

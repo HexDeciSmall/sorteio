@@ -7,7 +7,7 @@
   let busy = false;
   let rankType = 'daily';
   let rankingGame = 'notes';
-  const rankingGames = { notes: { name: 'Notas diárias', max: 15, wins: 'Acertos' }, characters: { name: 'Personagens', max: 8, wins: 'Completos' }, anidle: { name: 'Anidle', max: 22, wins: 'Vitórias' } };
+  const rankingGames = { notes: { name: 'Notas diárias', max: 15, wins: 'Acertos' }, characters: { name: 'Personagens', max: 24, wins: 'Completos' }, anidle: { name: 'Anidle', max: 22, wins: 'Vitórias' } };
   let rankGeneration = 0;
   let accountGeneration = 0;
   const today = window.DailyGuessr.todayKey();
@@ -59,7 +59,6 @@
   }
   async function renderRanking() {
     const selectedGame = rankingGames[rankingGame];
-    $('#ranking-description').textContent = selectedGame.name + ' · até ' + selectedGame.max + ' pontos por dia';
     $('#ranking-wins-label').textContent = selectedGame.wins;
     document.querySelectorAll('[data-ranking-game]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.rankingGame === rankingGame)));
     const currentDay = window.DailyGuessr.todayKey();
@@ -68,6 +67,8 @@
     $('#ranking-date').max = currentDay;
     $('#ranking-month').max = currentDay.slice(0, 7);
     rankingToday = currentDay;
+    const maximum = rankingGame === 'characters' && rankType === 'daily' && $('#ranking-date').value < '2026-10-24' ? 8 : selectedGame.max;
+    $('#ranking-description').textContent = selectedGame.name + ' · até ' + maximum + ' pontos por dia';
     const request = ++rankGeneration;
     $('#ranking-table-wrap').hidden = true;
     $('#ranking-rows').replaceChildren();

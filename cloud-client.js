@@ -431,10 +431,10 @@ function createCloudClient(host, sdk) {
       const controller=new AbortController();
       const timer=setTimeout(()=>controller.abort(),15000);
       try {
-        const response=await host.fetch('mini-data.json?v=mini-2026-10-20-v1',{signal:controller.signal});
-        if(!response.ok)throw clientError('Não foi possível carregar o desafio.', 'cloud/unavailable');
-        const dataset=await response.json();
-        return host.SorteioMiniCore.createEngine({dataset,D:host.DailyGuessr});
+        const responses=await Promise.all(['mini-data.json?v=mini-2026-10-20-v1','character-levels.json?v=characters-2026-10-24-v3'].map(file=>host.fetch(file,{signal:controller.signal})));
+        if(responses.some(response=>!response.ok))throw clientError('Não foi possível carregar o desafio.', 'cloud/unavailable');
+        const [dataset,characterLevels]=await Promise.all(responses.map(response=>response.json()));
+        return host.SorteioMiniCore.createEngine({dataset,D:host.DailyGuessr,characterLevels});
       }catch(error){
         if(error?.sorteioCloudError||error?.code?.startsWith('cloud/'))throw error;
         throw clientError('Não foi possível carregar o desafio. Tente novamente.', 'cloud/unavailable');
@@ -481,9 +481,9 @@ function createCloudClient(host, sdk) {
   }
   async function playMini(mode,date,action){
     miniMode(mode);dateValue(date);
-    if(!action||typeof action!=='object'||!['characters','anime','giveup'].includes(action.kind))throw clientError('Informe um palpite válido.', 'cloud/invalid-argument');
+    if(!action||typeof action!=='object'||!['characters','next_level','anime','giveup'].includes(action.kind))throw clientError('Informe um palpite válido.', 'cloud/invalid-argument');
     identifier(action.id,'Identificador da solicitação');
-    if(action.kind!=='giveup'&&action.kind!==(mode==='characters'?'characters':'anime'))throw clientError('Esse palpite pertence a outro desafio.', 'cloud/invalid-argument');
+    if(action.kind!=='giveup'&&!(mode==='characters'?['characters','next_level'].includes(action.kind):action.kind==='anime'))throw clientError('Esse palpite pertence a outro desafio.', 'cloud/invalid-argument');
     const submitted=clone(action);
     return request(async(user)=>{
       const member=memberFromAuth(user);
@@ -538,8 +538,8 @@ function createCloudClient(host, sdk) {
         if(game==='notes'){
           if(!Object.hasOwn(participants,row.username)||!Number.isInteger(row.score)||row.score<0||row.score>15||!Number.isInteger(row.wins)||row.wins<0||row.wins>5||document.id!==row.date+'_'+row.username||row.daysCompleted!==1)throw clientError('O ranking salvo está inconsistente.', 'cloud/invalid-response');
         }else{
-          const maximum=row.mode==='characters'?8:22;
-          const wins=row.mode==='characters'?4:1;
+          const maximum=row.mode==='characters'?(row.date>='2026-10-24'?24:8):22;
+          const wins=row.mode==='characters'?(row.date>='2026-10-24'?12:4):1;
           if(!['characters','anidle'].includes(row.mode)||row.version!==1||!Object.hasOwn(participants,row.username)||!Number.isInteger(row.score)||row.score<0||row.score>maximum||!Number.isInteger(row.wins)||row.wins<0||row.wins>wins||document.id!==row.mode+'_'+row.date+'_'+row.username||row.daysCompleted!==1||row.month!==dateValue(row.date).slice(0,7)||row.dateNumber!==Number(row.date.replaceAll('-',''))||row[query.type==='daily'?'date':'month']!==period)throw clientError('O ranking salvo está inconsistente.', 'cloud/invalid-response');
           if(row.mode!==game)return;
         }

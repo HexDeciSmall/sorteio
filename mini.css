@@ -6,6 +6,15 @@
 .mini-round-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 25px 0 22px; }
 .mini-round-heading > strong { font-size: 18px; font-weight: 500; }
 .mini-round-heading > span { color: var(--muted); font-size: 12px; }
+.mini-character-levels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 24px; padding: 0; list-style: none; }
+.mini-character-levels li { display: grid; grid-template-columns: 24px 1fr; gap: 3px 9px; align-items: center; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); background: #1c1b21; }
+.mini-character-levels li > span { grid-row: span 2; display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid #45404d; border-radius: 50%; font-size: 11px; }
+.mini-character-levels strong { font-size: 13px; font-weight: 500; }
+.mini-character-levels small { font-size: 10px; }
+.mini-character-levels .is-active { color: #d8c1ef; border-color: #70558a; background: #31253e60; }
+.mini-character-levels .is-active > span { border-color: #9f78bf; }
+.mini-character-levels .is-complete { color: var(--correct); }
+.mini-character-group { grid-column: 1 / -1; margin: 18px 0 0; color: #d8c1ef; font-size: 16px; font-weight: 500; }
 .mini-character-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
 .mini-character-card { min-width: 0; }
 .mini-character-image { position: relative; width: 100%; aspect-ratio: 3/4; border: 1px solid #39353f; border-radius: 10px; overflow: hidden; background: #27242d; }
@@ -81,6 +90,7 @@
   #mini-games { margin-top: 20px; }.mini-daily-toolbar { padding: 11px 12px; margin-bottom: 20px; }.mini-daily-toolbar .daily-streaks { width: auto; margin-left: auto; font-size: 11px; }
   .mini-date-label input { width: 139px; }.mini-date-controls { gap: 7px; }.mini-character-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 14px; }.mini-character-field input { min-height: 44px; }
   .mini-round-heading > strong { font-size: 16px; }.mini-round-heading > span { font-size: 11px; }.mini-anidle-form .button { min-width: 95px; padding: 12px; }.mini-anidle-meta { margin-bottom: 15px; }
+  .mini-character-levels { gap: 7px; margin-bottom: 20px; }.mini-character-levels li { grid-template-columns: 1fr; gap: 4px; padding: 11px 9px; }.mini-character-levels li > span { display: none; }.mini-character-levels strong { font-size: 12px; }.mini-character-levels small { font-size: 9px; }
   .mini-finished { padding: 17px; }.mini-finished .button { width: 100%; }.mini-suggestion strong { font-size: 11px; }.mini-suggestion img { width: 25px; height: 35px; }.mini-suggestions { max-height: 250px; }
 }
 @media (max-width: 380px) { .mini-character-cards { gap: 20px 10px; }.mini-character-field input { padding: 11px 22px 11px 9px; font-size: 11px; }.mini-field-mark { right: 8px; }.mini-character-answer strong { font-size: 12px; }.mini-anidle-form { gap: 8px; } }

@@ -10,6 +10,9 @@
   var DATASET_ID = 'mini-2026-10-20-v1';
   var SCHEDULE_START = '2026-10-24';
   var SCHEDULE_ID = 'mini-2026-10-24-v2';
+  var CHARACTER_LEVELS_ID = 'characters-2026-10-24-v3';
+  var CHARACTER_LEVEL_KEYS = ['easy', 'medium', 'hard'];
+  var CHARACTER_LEVEL_NAMES = ['Fácil', 'Médio', 'Difícil'];
   var LIMITS = { characters: 3, anidle: 22 };
   var own = function (value, key) { return Object.prototype.hasOwnProperty.call(value, key); };
   var clone = function (value) { return JSON.parse(JSON.stringify(value)); };
@@ -122,12 +125,33 @@
       };
     }).sort(function (a, b) { return a.id - b.id; });
     if (new Set(characters.map(function (item) { return item.id; })).size !== characters.length) fail('O catálogo contém personagens repetidos.');
+    var characterPartitions = null;
+    if (settings.characterLevels !== undefined) {
+      var levelsInput = object(settings.characterLevels, 'Os níveis de personagens');
+      if (levelsInput.version !== 1 || levelsInput.id !== CHARACTER_LEVELS_ID || levelsInput.startDate !== SCHEDULE_START || levelsInput.baseDatasetId !== DATASET_ID || levelsInput.source !== 'AniList' || levelsInput.criterion !== 'FAVOURITES_DESC') fail('A edição dos níveis de personagens é incompatível.');
+      var partitionsInput = object(levelsInput.partitions, 'Os grupos de personagens');
+      var characterById = new Map(characters.map(function (item) { return [item.id, item]; }));
+      var partitionIds = new Set();
+      characterPartitions = CHARACTER_LEVEL_KEYS.map(function (key) {
+        var ids = partitionsInput[key];
+        if (!Array.isArray(ids) || ids.length < 4) fail('Cada nível precisa de pelo menos quatro personagens.');
+        return ids.map(function (id) {
+          mediaId(id, 'O personagem do nível');
+          if (!characterById.has(id) || partitionIds.has(id)) fail('Os níveis contêm personagens repetidos ou desconhecidos.');
+          partitionIds.add(id);
+          return characterById.get(id);
+        }).sort(function (a, b) { return a.id - b.id; });
+      });
+      if (partitionIds.size !== characters.length) fail('Os níveis precisam incluir todos os personagens do catálogo uma única vez.');
+    }
     var generatedAt = cleanText(input.generatedAt, 80, 'A data do catálogo', true) || null;
     var generationCache = new Map();
     var schedulePools;
     var cycleCache = new Map();
+    var levelPools;
 
-    function scheduleId(date) { return date < SCHEDULE_START ? DATASET_ID : SCHEDULE_ID; }
+    function hasLevels(mode, date) { return mode === 'characters' && date >= SCHEDULE_START && characterPartitions !== null; }
+    function scheduleId(date, mode) { return hasLevels(mode, date) ? CHARACTER_LEVELS_ID : date < SCHEDULE_START ? DATASET_ID : SCHEDULE_ID; }
 
     function isSeries(item) { return ['TV', 'TV_SHORT', 'ONA'].includes(item.format); }
 
@@ -297,10 +321,63 @@
       return mode === 'characters' ? { characters: picked } : { targetAnime: picked[0] };
     }
 
+    function prepareLevelPools() {
+      if (levelPools) return;
+      var used = new Set();
+      ['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23'].forEach(function (date) {
+        legacyTargets('characters', date).characters.forEach(function (item) { used.add(item.id); });
+      });
+      levelPools = characterPartitions.map(function (full) { return { full: full, first: full.filter(function (item) { return !used.has(item.id); }) }; });
+    }
+
+    function levelCycleOffset(levelIndex, number) {
+      var pools = levelPools[levelIndex];
+      return number > 0 ? (pools.first.length + (number - 1) * pools.full.length) % 4 : 0;
+    }
+
+    function levelBaseCycle(levelIndex, number) {
+      return cachedCycle('level|' + levelIndex + '|base|' + number, function () {
+        var pools = levelPools[levelIndex];
+        var items = shuffled(number === 0 ? pools.first : pools.full, CHARACTER_LEVELS_ID + '|' + CHARACTER_LEVEL_KEYS[levelIndex] + '|cycle|' + number);
+        return diverseOrder(items, levelCycleOffset(levelIndex, number));
+      });
+    }
+
+    function levelCycle(levelIndex, number) {
+      if (number === 0) return levelBaseCycle(levelIndex, number);
+      var pools = levelPools[levelIndex];
+      var actualNumber = pools.full.length < 12 ? 1 : number;
+      return cachedCycle('level|' + levelIndex + '|cycle|' + actualNumber, function () {
+        var previous = levelBaseCycle(levelIndex, actualNumber - 1);
+        if (!previous.length) previous = legacyTargets('characters', '2026-10-23').characters;
+        return arrangeBoundary('characters', levelBaseCycle(levelIndex, actualNumber), previous.slice(-4), levelCycleOffset(levelIndex, actualNumber), pools.full.length < 12 ? 0 : 4);
+      });
+    }
+
+    function levelTargets(date) {
+      prepareLevelPools();
+      var dayIndex = Math.floor((Date.parse(date + 'T00:00:00Z') - Date.parse(SCHEDULE_START + 'T00:00:00Z')) / 86400000);
+      var picked = [];
+      levelPools.forEach(function (pools, levelIndex) {
+        var position = dayIndex * 4;
+        var group = [];
+        while (group.length < 4) {
+          var number = position < pools.first.length ? 0 : 1 + Math.floor((position - pools.first.length) / pools.full.length);
+          var index = number === 0 ? position : (position - pools.first.length) % pools.full.length;
+          var items = levelCycle(levelIndex, number);
+          var take = Math.min(4 - group.length, items.length - index);
+          group = group.concat(items.slice(index, index + take));
+          position += take;
+        }
+        picked = picked.concat(group);
+      });
+      return { characters: picked };
+    }
+
     function targets(mode, date) {
       var key = mode + '|' + date;
       if (generationCache.has(key)) return generationCache.get(key);
-      var selected = date < SCHEDULE_START ? legacyTargets(mode, date) : scheduledTargets(mode, date);
+      var selected = hasLevels(mode, date) ? levelTargets(date) : date < SCHEDULE_START ? legacyTargets(mode, date) : scheduledTargets(mode, date);
       generationCache.set(key, selected);
       if (generationCache.size > 128) generationCache.delete(generationCache.keys().next().value);
       return selected;
@@ -335,13 +412,19 @@
       else if (mode === 'characters' && action.kind === 'characters') {
         if (!Array.isArray(action.answers) || action.answers.length !== 4) fail('Envie uma resposta para cada um dos quatro personagens.');
         result = { kind: 'characters', answers: action.answers.map(answer) };
-        if (!result.answers.some(function (entry) { return entry.character || entry.animeText || entry.animeId !== null; })) fail('Preencha pelo menos uma resposta antes de enviar.');
+        if (!hasLevels(mode, date) && !result.answers.some(function (entry) { return entry.character || entry.animeText || entry.animeId !== null; })) fail('Preencha pelo menos uma resposta antes de enviar.');
+      } else if (hasLevels(mode, date) && action.kind === 'next_level') {
+        result = { kind: 'next_level' };
       } else if (mode === 'anidle' && action.kind === 'anime') {
         var id = mediaId(action.animeId, 'O palpite');
         if (!animeById.has(id)) fail('Escolha um anime disponível no catálogo.');
         if (date >= SCHEDULE_START && !isSeries(animeById.get(id))) fail('Neste Anidle, escolha uma série de TV ou online; OVA, filmes e especiais não participam.');
         result = { kind: 'anime', animeId: id };
       } else fail('Essa jogada não pertence ao desafio selecionado.');
+      if (hasLevels(mode, date) && result.kind !== 'giveup') {
+        if (!Number.isInteger(action.levelIndex) || action.levelIndex < 0 || action.levelIndex > 2) fail('Escolha um nível de personagens válido.');
+        result.levelIndex = action.levelIndex;
+      }
       if (requiresId) {
         if (typeof action.id !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(action.id)) fail('O identificador da jogada é inválido.');
       }
@@ -351,30 +434,52 @@
     function attemptValue(value, mode, date) {
       object(value, 'Uma tentativa salva');
       if (value.giveup === true) return { giveup: true };
-      var action = actionValue(mode === 'characters' ? { kind: 'characters', answers: value.answers } : { kind: 'anime', animeId: value.animeId }, mode, false, date);
-      return mode === 'characters' ? { answers: action.answers } : { animeId: action.animeId };
+      var action = actionValue(mode === 'characters' ? { kind: value.kind === 'next_level' ? 'next_level' : 'characters', answers: value.answers, levelIndex: value.levelIndex } : { kind: 'anime', animeId: value.animeId }, mode, false, date);
+      if (action.kind === 'next_level') return { kind: 'next_level', levelIndex: action.levelIndex };
+      var result = mode === 'characters' ? { answers: action.answers } : { animeId: action.animeId };
+      if (hasLevels(mode, date)) result.levelIndex = action.levelIndex;
+      return result;
     }
 
     function attemptAction(attempt, mode) {
       if (attempt.giveup === true) return { kind: 'giveup' };
-      return mode === 'characters' ? { kind: 'characters', answers: attempt.answers } : { kind: 'anime', animeId: attempt.animeId };
+      if (attempt.kind === 'next_level') return { kind: 'next_level', levelIndex: attempt.levelIndex };
+      var result = mode === 'characters' ? { kind: 'characters', answers: attempt.answers } : { kind: 'anime', animeId: attempt.animeId };
+      if (mode === 'characters' && attempt.levelIndex !== undefined) result.levelIndex = attempt.levelIndex;
+      return result;
     }
 
     function initialDay(mode, date) {
       var selected = targets(mode, date);
-      var day = { version: 1, mode: mode, date: date, datasetId: scheduleId(date), attempts: [], completed: false, gaveUp: false, score: 0, wins: 0, attemptsUsed: 0 };
+      var day = { version: 1, mode: mode, date: date, datasetId: scheduleId(date, mode), attempts: [], completed: false, gaveUp: false, score: 0, wins: 0, attemptsUsed: 0 };
       if (mode === 'characters') day.characters = selected.characters.map(function (item) { return { target: item, characterGuess: '', animeGuess: '', animeId: null, characterCorrect: false, animeCorrect: false }; });
       else day.targetAnime = selected.targetAnime;
+      if (hasLevels(mode, date)) {
+        day.levelIndex = 0;
+        day.levels = CHARACTER_LEVEL_KEYS.map(function (key, index) { return { index: index, key: key, name: CHARACTER_LEVEL_NAMES[index], completed: false, score: 0, wins: 0, attemptsUsed: 0, maxAttempts: 3, maxScore: 8 }; });
+      }
       return day;
     }
 
     function play(day, attempt) {
       if (day.completed) fail('Você já terminou esse desafio diário.');
       if (attempt.giveup === true) { day.gaveUp = true; day.completed = true; day.attempts.push(attempt); return; }
+      var levelsEnabled = hasLevels(day.mode, day.date);
+      if (levelsEnabled) {
+        if (attempt.levelIndex !== day.levelIndex) fail('Esse nível mudou. Atualize o desafio antes de enviar.');
+        var currentLevel = day.levels[day.levelIndex];
+        if (attempt.kind === 'next_level') {
+          if (!currentLevel.completed || day.levelIndex >= 2) fail('Finalize esse nível antes de avançar.');
+          day.levelIndex++;
+          day.attempts.push(attempt);
+          return;
+        }
+        if (currentLevel.completed) fail('Esse nível já terminou. Avance para o próximo nível.');
+      }
       if (day.mode === 'characters') {
         var newResponse = false;
         attempt.answers.forEach(function (entry, index) {
-          var card = day.characters[index];
+          var card = day.characters[index + (levelsEnabled ? day.levelIndex * 4 : 0)];
           if (!card.characterCorrect && entry.character) {
             newResponse = true;
             card.characterGuess = entry.character;
@@ -387,20 +492,27 @@
             card.animeCorrect = animeMatches(entry, card.target);
           }
         });
-        if (!newResponse) fail('Preencha pelo menos uma resposta que ainda não foi acertada.');
+        if (!levelsEnabled && !newResponse) fail('Preencha pelo menos uma resposta que ainda não foi acertada.');
         day.score = day.characters.reduce(function (total, card) { return total + Number(card.characterCorrect) + Number(card.animeCorrect); }, 0);
         day.wins = day.characters.filter(function (card) { return card.characterCorrect && card.animeCorrect; }).length;
+        if (levelsEnabled) {
+          var group = day.characters.slice(day.levelIndex * 4, day.levelIndex * 4 + 4);
+          currentLevel.score = group.reduce(function (total, card) { return total + Number(card.characterCorrect) + Number(card.animeCorrect); }, 0);
+          currentLevel.wins = group.filter(function (card) { return card.characterCorrect && card.animeCorrect; }).length;
+          currentLevel.attemptsUsed++;
+          currentLevel.completed = currentLevel.attemptsUsed >= 3 || currentLevel.score === 8;
+        }
       } else {
         if (day.attempts.some(function (previous) { return previous.animeId === attempt.animeId; })) fail('Esse anime já foi tentado. Escolha outro.');
         if (attempt.animeId === day.targetAnime.id) { day.wins = 1; day.score = LIMITS.anidle - day.attemptsUsed; }
       }
       day.attempts.push(attempt);
       day.attemptsUsed++;
-      day.completed = day.attemptsUsed >= LIMITS[day.mode] || (day.mode === 'characters' ? day.score === 8 : day.wins === 1);
+      day.completed = levelsEnabled ? day.levelIndex === 2 && currentLevel.completed : day.attemptsUsed >= LIMITS[day.mode] || (day.mode === 'characters' ? day.score === 8 : day.wins === 1);
     }
 
     function compact(day, requests) {
-      return { version: 1, mode: day.mode, date: day.date, dateNumber: Number(day.date.replace(/-/g, '')), month: day.date.slice(0, 7), datasetId: scheduleId(day.date), attempts: clone(day.attempts), completed: day.completed, score: day.score, wins: day.wins, requests: clone(requests) };
+      return { version: 1, mode: day.mode, date: day.date, dateNumber: Number(day.date.replace(/-/g, '')), month: day.date.slice(0, 7), datasetId: scheduleId(day.date, day.mode), attempts: clone(day.attempts), completed: day.completed, score: day.score, wins: day.wins, requests: clone(requests) };
     }
 
     function read(raw, mode, date, today) {
@@ -409,15 +521,16 @@
       var requests = [];
       if (raw !== null && raw !== undefined) {
         object(raw, 'O progresso salvo');
-        if (raw.version !== 1 || raw.mode !== mode || raw.date !== date || raw.datasetId !== scheduleId(raw.date) || raw.month !== date.slice(0, 7) || raw.dateNumber !== Number(date.replace(/-/g, ''))) fail('O progresso pertence a outro desafio ou edição. Atualize o site para usar a edição correta desta data.');
-        if (!Array.isArray(raw.attempts) || raw.attempts.length > LIMITS[mode] + 1 || !Array.isArray(raw.requests) || raw.requests.length !== raw.attempts.length || raw.requests.length > 23) fail('As tentativas salvas possuem formato inválido.');
+        if (raw.version !== 1 || raw.mode !== mode || raw.date !== date || raw.datasetId !== scheduleId(raw.date, mode) || raw.month !== date.slice(0, 7) || raw.dateNumber !== Number(date.replace(/-/g, ''))) fail('O progresso pertence a outro desafio ou edição. Atualize o site para usar a edição correta desta data.');
+        var limit = hasLevels(mode, date) ? 12 : LIMITS[mode] + 1;
+        if (!Array.isArray(raw.attempts) || raw.attempts.length > limit || !Array.isArray(raw.requests) || raw.requests.length !== raw.attempts.length || raw.requests.length > 23) fail('As tentativas salvas possuem formato inválido.');
         var ids = new Set();
         var fingerprints = new Set();
         raw.attempts.forEach(function (entry, index) {
           var attempt = attemptValue(entry, mode, date);
           var request = object(raw.requests[index], 'Uma solicitação salva');
           var fingerprint = JSON.stringify(attemptAction(attempt, mode));
-          if (typeof request.id !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(request.id) || ids.has(request.id) || request.fingerprint !== fingerprint || fingerprints.has(fingerprint)) fail('O histórico de solicitações do desafio é inválido.');
+          if (typeof request.id !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(request.id) || ids.has(request.id) || request.fingerprint !== fingerprint || (!hasLevels(mode, date) && fingerprints.has(fingerprint))) fail('O histórico de solicitações do desafio é inválido.');
           ids.add(request.id); fingerprints.add(fingerprint);
           play(day, attempt);
           requests.push({ id: request.id, fingerprint: fingerprint });
@@ -437,8 +550,9 @@
         result.changed = false;
         return result;
       }
-      if (result.record.requests.some(function (request) { return request.fingerprint === fingerprint; })) { result.changed = false; return result; }
-      var attempt = value.kind === 'giveup' ? { giveup: true } : mode === 'characters' ? { answers: value.answers } : { animeId: value.animeId };
+      if (!hasLevels(mode, date) && result.record.requests.some(function (request) { return request.fingerprint === fingerprint; })) { result.changed = false; return result; }
+      var attempt = value.kind === 'giveup' ? { giveup: true } : value.kind === 'next_level' ? { kind: 'next_level', levelIndex: value.levelIndex } : mode === 'characters' ? { answers: value.answers } : { animeId: value.animeId };
+      if (hasLevels(mode, date) && value.kind === 'characters') attempt.levelIndex = value.levelIndex;
       play(result.day, attempt);
       result.record.requests.push({ id: action.id, fingerprint: fingerprint });
       result.record = compact(result.day, result.record.requests);
@@ -492,10 +606,28 @@
     function view(day) {
       object(day, 'O desafio');
       validMode(day.mode);
-      var result = { mode: day.mode, date: day.date, datasetId: scheduleId(day.date), completed: day.completed, gaveUp: day.gaveUp, score: day.score, wins: day.wins, attemptsUsed: day.attemptsUsed, maxAttempts: LIMITS[day.mode], remaining: LIMITS[day.mode] - day.attemptsUsed, canSubmit: !day.completed, maxScore: day.mode === 'characters' ? 8 : 22 };
+      var result = { mode: day.mode, date: day.date, datasetId: scheduleId(day.date, day.mode), completed: day.completed, gaveUp: day.gaveUp, score: day.score, wins: day.wins, attemptsUsed: day.attemptsUsed, maxAttempts: LIMITS[day.mode], remaining: LIMITS[day.mode] - day.attemptsUsed, canSubmit: !day.completed, maxScore: day.mode === 'characters' ? 8 : 22 };
       if (day.mode === 'characters') {
-        result.cards = day.characters.map(function (card, index) {
-          return { slot: index, imageUrl: card.target.imageUrl, characterGuess: card.characterGuess, animeGuess: card.animeGuess, animeId: card.animeId, characterCorrect: card.characterCorrect, animeCorrect: card.animeCorrect, characterName: day.completed ? card.target.name : null, animeTitle: day.completed ? card.target.animeTitle : null };
+        var levelsEnabled = hasLevels(day.mode, day.date);
+        var currentLevel = levelsEnabled ? day.levels[day.levelIndex] : null;
+        if (levelsEnabled) {
+          result.levelIndex = day.levelIndex;
+          result.levelName = currentLevel.name;
+          result.levelCompleted = currentLevel.completed;
+          result.levelAttemptsUsed = currentLevel.attemptsUsed;
+          result.levels = clone(day.levels);
+          result.totalCharacters = 12;
+          result.maxScore = 24;
+          result.remaining = 3 - currentLevel.attemptsUsed;
+          result.canSubmit = !day.completed && !currentLevel.completed;
+          result.canAdvance = !day.completed && currentLevel.completed && day.levelIndex < 2;
+        }
+        var visibleCards = levelsEnabled && !day.completed ? day.characters.slice(day.levelIndex * 4, day.levelIndex * 4 + 4) : day.characters;
+        result.cards = visibleCards.map(function (card, index) {
+          var revealed = day.completed || (levelsEnabled && currentLevel.completed);
+          var value = { slot: index, imageUrl: card.target.imageUrl, characterGuess: card.characterGuess, animeGuess: card.animeGuess, animeId: card.animeId, characterCorrect: card.characterCorrect, animeCorrect: card.animeCorrect, characterName: revealed ? card.target.name : null, animeTitle: revealed ? card.target.animeTitle : null };
+          if (levelsEnabled) value.levelIndex = day.completed ? Math.floor(index / 4) : day.levelIndex;
+          return value;
         });
       } else {
         result.guesses = day.attempts.filter(function (attempt) { return !attempt.giveup; }).map(function (attempt) { return compareAnime(attempt.animeId, day.targetAnime.id); });
@@ -507,7 +639,7 @@
     }
 
     function summary(day) {
-      return { completed: day.completed === true, score: day.score, wins: day.wins, attemptsUsed: day.attemptsUsed, maxAttempts: LIMITS[validMode(day.mode)], maxScore: day.mode === 'characters' ? 8 : 22 };
+      return { completed: day.completed === true, score: day.score, wins: day.wins, attemptsUsed: day.attemptsUsed, maxAttempts: hasLevels(day.mode, day.date) ? 9 : LIMITS[validMode(day.mode)], maxScore: day.mode === 'characters' ? hasLevels(day.mode, day.date) ? 24 : 8 : 22 };
     }
 
     function response(day, days, today) {
@@ -580,5 +712,5 @@
     return { read: read, apply: apply, view: view, response: response, searchAnime: searchAnime, searchCharacters: searchCharacters, compareAnime: compareAnime, summary: summary, datasetInfo: datasetInfo };
   }
 
-  return { START_DATE: START_DATE, DATASET_ID: DATASET_ID, SCHEDULE_START: SCHEDULE_START, SCHEDULE_ID: SCHEDULE_ID, createEngine: createEngine, normalizeText: normalized };
+  return { START_DATE: START_DATE, DATASET_ID: DATASET_ID, SCHEDULE_START: SCHEDULE_START, SCHEDULE_ID: SCHEDULE_ID, CHARACTER_LEVELS_ID: CHARACTER_LEVELS_ID, createEngine: createEngine, normalizeText: normalized };
 });

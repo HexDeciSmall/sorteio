@@ -8,18 +8,18 @@
   <title>Sorteio</title>
   <link rel="icon" href="favicon.svg?v=mini-20261020" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css?v=cartas-20261021">
-  <link rel="stylesheet" href="mini.css?v=dicas-20261021">
+  <link rel="stylesheet" href="mini.css?v=niveis-20261023">
   <script src="core.js?v=nando-20261023" defer></script>
   <script src="catalog.js?v=mini-20261020" defer></script>
   <script src="guessr-core.js?v=mini-20261020" defer></script>
   <script src="daily-core.js?v=mini-20261020" defer></script>
   <script src="spark-core.js?v=nando-20261023" defer></script>
-  <script src="mini-core.js?v=ciclos-20261023" defer></script>
+  <script src="mini-core.js?v=niveis-20261023" defer></script>
   <script src="app.js?v=cartas-20261021" defer></script>
   <script src="firebase-config.js?v=mini-20261020" defer></script>
-  <script src="cloud-client.js?v=nando-20261023" defer></script>
-  <script src="account.js?v=mini-20261020" defer></script>
-  <script src="mini-games.js?v=ciclos-20261023" defer></script>
+  <script src="cloud-client.js?v=niveis-20261023" defer></script>
+  <script src="account.js?v=niveis-20261023" defer></script>
+  <script src="mini-games.js?v=niveis-20261023" defer></script>
   <script src="guessr.js?v=nando-20261023" defer></script>
 </head>
 <body>
@@ -128,10 +128,11 @@
         <p id="mini-notice" class="guessr-notice" role="status" hidden></p>
         <div id="mini-login-gate" class="daily-login-gate" hidden><p id="mini-login-message">Entre para jogar o desafio diário.</p><button type="button" class="button button-primary" data-account-open>Entrar</button></div>
         <div id="mini-board" hidden>
-          <div class="mini-round-heading"><strong id="mini-attempts">Tentativa 1 / 3</strong><span id="mini-progress">0 / 8 campos</span></div>
-          <form id="mini-character-form" autocomplete="off" hidden>
+          <div class="mini-round-heading"><strong id="mini-attempts">Tentativa 1 / 3</strong><span id="mini-progress">0 / 24 pontos</span></div>
+          <form id="mini-character-form" autocomplete="off" novalidate hidden>
+            <ol id="mini-character-levels" class="mini-character-levels" aria-label="Níveis do desafio" hidden></ol>
             <div id="mini-character-cards" class="mini-character-cards"></div>
-            <div class="mini-submit-row"><button type="submit" id="mini-character-submit" class="button button-primary">Enviar palpites</button><button type="button" class="text-button" id="mini-character-giveup">Encerrar desafio</button></div>
+            <div class="mini-submit-row"><button type="submit" id="mini-character-submit" class="button button-primary">Enviar palpites</button><button type="button" id="mini-character-next" class="button button-primary" hidden>Próximo nível</button><button type="button" class="text-button" id="mini-character-giveup">Encerrar desafio</button></div>
           </form>
           <section id="mini-anidle-panel" aria-label="Anidle diário" hidden>
             <form id="mini-anidle-form" class="mini-anidle-form" autocomplete="off"><div class="mini-search"><label class="sr-only" for="mini-anime-input">Buscar anime para o palpite</label><input id="mini-anime-input" type="search" maxlength="200" placeholder="Buscar anime…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="mini-anime-options"><div id="mini-anime-options" class="mini-suggestions" role="listbox" aria-label="Animes encontrados" hidden></div></div><button id="mini-anime-submit" type="submit" class="button button-primary">Palpitar</button></form>
