@@ -429,12 +429,12 @@ function createCloudClient(host, sdk) {
   function miniEngine() {
     if(!miniEnginePromise)miniEnginePromise=(async()=>{
       const controller=new AbortController();
-      const timer=setTimeout(()=>controller.abort(),15000);
+      const timer=setTimeout(()=>controller.abort(),30000);
       try {
-        const responses=await Promise.all(['mini-data.json?v=mini-2026-10-20-v1','character-levels.json?v=characters-2026-10-24-v3'].map(file=>host.fetch(file,{signal:controller.signal})));
+        const responses=await Promise.all(['mini-data.json?v=mini-2026-10-20-v1','character-levels.json?v=characters-2026-10-24-v3','mini-expanded.json?v=mini-2026-10-25-v4','character-levels-expanded.json?v=characters-2026-10-25-v4'].map(file=>host.fetch(file,{signal:controller.signal})));
         if(responses.some(response=>!response.ok))throw clientError('Não foi possível carregar o desafio.', 'cloud/unavailable');
-        const [dataset,characterLevels]=await Promise.all(responses.map(response=>response.json()));
-        return host.SorteioMiniCore.createEngine({dataset,D:host.DailyGuessr,characterLevels});
+        const [dataset,characterLevels,expandedDataset,expandedLevels]=await Promise.all(responses.map(response=>response.json()));
+        return host.SorteioMiniCore.createEngine({dataset,D:host.DailyGuessr,characterLevels,expansion:{dataset:expandedDataset,characterLevels:expandedLevels}});
       }catch(error){
         if(error?.sorteioCloudError||error?.code?.startsWith('cloud/'))throw error;
         throw clientError('Não foi possível carregar o desafio. Tente novamente.', 'cloud/unavailable');

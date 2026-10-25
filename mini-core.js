@@ -11,6 +11,9 @@
   var SCHEDULE_START = '2026-10-24';
   var SCHEDULE_ID = 'mini-2026-10-24-v2';
   var CHARACTER_LEVELS_ID = 'characters-2026-10-24-v3';
+  var EXPANSION_START = '2026-10-25';
+  var EXPANSION_ID = 'mini-2026-10-25-v4';
+  var EXPANDED_CHARACTER_LEVELS_ID = 'characters-2026-10-25-v4';
   var CHARACTER_LEVEL_KEYS = ['easy', 'medium', 'hard'];
   var CHARACTER_LEVEL_NAMES = ['Fácil', 'Médio', 'Difícil'];
   var LIMITS = { characters: 3, anidle: 22 };
@@ -88,12 +91,18 @@
     };
   }
 
-  function createEngine(settings) {
+  function createBaseEngine(settings, edition) {
+    var startDate = edition ? EXPANSION_START : START_DATE;
+    var calendarStartDate = START_DATE;
+    var baseDatasetId = edition ? EXPANSION_ID : DATASET_ID;
+    var scheduleStart = edition ? EXPANSION_START : SCHEDULE_START;
+    var scheduleDatasetId = edition ? EXPANSION_ID : SCHEDULE_ID;
+    var characterLevelsId = edition ? EXPANDED_CHARACTER_LEVELS_ID : CHARACTER_LEVELS_ID;
     object(settings, 'A configuração do desafio');
     var D = settings.D;
     if (!D || typeof D.validateDate !== 'function' || typeof D.streak !== 'function' || typeof D.todayKey !== 'function') fail('O calendário dos desafios não foi carregado.');
     var input = object(settings.dataset, 'O catálogo dos desafios');
-    if (input.version !== 1 || input.id !== DATASET_ID || input.startDate !== START_DATE) fail('A edição dos desafios é incompatível.');
+    if (input.version !== 1 || input.id !== baseDatasetId || input.startDate !== startDate) fail('A edição dos desafios é incompatível.');
     D.validateDate(input.startDate);
     if (!Array.isArray(input.anime) || input.anime.length < 4 || input.anime.length > 10000 || !Array.isArray(input.characters) || input.characters.length < 4 || input.characters.length > 30000) fail('O catálogo precisa de pelo menos quatro animes e quatro personagens.');
     var anime = input.anime.map(function (item) {
@@ -128,7 +137,7 @@
     var characterPartitions = null;
     if (settings.characterLevels !== undefined) {
       var levelsInput = object(settings.characterLevels, 'Os níveis de personagens');
-      if (levelsInput.version !== 1 || levelsInput.id !== CHARACTER_LEVELS_ID || levelsInput.startDate !== SCHEDULE_START || levelsInput.baseDatasetId !== DATASET_ID || levelsInput.source !== 'AniList' || levelsInput.criterion !== 'FAVOURITES_DESC') fail('A edição dos níveis de personagens é incompatível.');
+      if (levelsInput.version !== 1 || levelsInput.id !== characterLevelsId || levelsInput.startDate !== scheduleStart || levelsInput.baseDatasetId !== baseDatasetId || levelsInput.source !== 'AniList' || levelsInput.criterion !== 'FAVOURITES_DESC') fail('A edição dos níveis de personagens é incompatível.');
       var partitionsInput = object(levelsInput.partitions, 'Os grupos de personagens');
       var characterById = new Map(characters.map(function (item) { return [item.id, item]; }));
       var partitionIds = new Set();
@@ -150,8 +159,8 @@
     var cycleCache = new Map();
     var levelPools;
 
-    function hasLevels(mode, date) { return mode === 'characters' && date >= SCHEDULE_START && characterPartitions !== null; }
-    function scheduleId(date, mode) { return hasLevels(mode, date) ? CHARACTER_LEVELS_ID : date < SCHEDULE_START ? DATASET_ID : SCHEDULE_ID; }
+    function hasLevels(mode, date) { return mode === 'characters' && date >= scheduleStart && characterPartitions !== null; }
+    function scheduleId(date, mode) { return hasLevels(mode, date) ? characterLevelsId : date < scheduleStart ? baseDatasetId : scheduleDatasetId; }
 
     function isSeries(item) { return ['TV', 'TV_SHORT', 'ONA'].includes(item.format); }
 
@@ -164,13 +173,13 @@
       validMode(mode);
       D.validateDate(date);
       today = D.validateDate(today || D.todayKey());
-      if (date < START_DATE) fail('O calendário começa em 20/10/2026.');
+      if (date < startDate) fail('O calendário começa em 20/10/2026.');
       if (date > today) fail('Esse desafio ainda não foi liberado.');
       return today;
     }
 
     function legacyTargets(mode, date) {
-      var next = randomIndex(DATASET_ID + '|' + mode + '|' + date);
+      var next = randomIndex(baseDatasetId + '|' + mode + '|' + date);
       var selected;
       if (mode === 'anidle') selected = { targetAnime: anime[next(anime.length)] };
       else {
@@ -220,7 +229,10 @@
     function prepareSchedules() {
       if (schedulePools) return;
       var used = { characters: new Set(), anidle: new Set() };
-      ['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23'].forEach(function (date) {
+      if (edition) {
+        edition.usedCharacters.forEach(function (id) { used.characters.add(id); });
+        edition.usedAnime.forEach(function (id) { used.anidle.add(id); });
+      } else ['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23'].forEach(function (date) {
         legacyTargets('characters', date).characters.forEach(function (item) { used.characters.add(item.id); });
         used.anidle.add(legacyTargets('anidle', date).targetAnime.id);
       });
@@ -247,7 +259,7 @@
     function baseCycle(mode, number) {
       return cachedCycle(mode + '|base|' + number, function () {
         var pools = schedulePools[mode];
-        var items = shuffled(number === 0 ? pools.first : pools.full, SCHEDULE_ID + '|' + mode + '|cycle|' + number);
+        var items = shuffled(number === 0 ? pools.first : pools.full, scheduleDatasetId + '|' + mode + '|cycle|' + number);
         return mode === 'characters' ? diverseOrder(items, cycleOffset(mode, number)) : items;
       });
     }
@@ -255,7 +267,7 @@
     function previousCycleTail(mode, number) {
       var previous = baseCycle(mode, number - 1);
       if (previous.length) return previous.slice(-4);
-      var legacy = legacyTargets(mode, '2026-10-23');
+      var legacy = edition ? { characters: edition.previousCharacters, targetAnime: edition.previousAnime } : legacyTargets(mode, '2026-10-23');
       return mode === 'characters' ? legacy.characters : [legacy.targetAnime];
     }
 
@@ -307,7 +319,7 @@
       var pools = schedulePools[mode];
       if (!pools.full.length) fail('O catálogo não contém séries disponíveis para o Anidle.');
       var count = mode === 'characters' ? 4 : 1;
-      var dayIndex = Math.floor((Date.parse(date + 'T00:00:00Z') - Date.parse(SCHEDULE_START + 'T00:00:00Z')) / 86400000);
+      var dayIndex = Math.floor((Date.parse(date + 'T00:00:00Z') - Date.parse(scheduleStart + 'T00:00:00Z')) / 86400000);
       var position = dayIndex * count;
       var picked = [];
       while (picked.length < count) {
@@ -324,7 +336,8 @@
     function prepareLevelPools() {
       if (levelPools) return;
       var used = new Set();
-      ['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23'].forEach(function (date) {
+      if (edition) edition.usedCharacters.forEach(function (id) { used.add(id); });
+      else ['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23'].forEach(function (date) {
         legacyTargets('characters', date).characters.forEach(function (item) { used.add(item.id); });
       });
       levelPools = characterPartitions.map(function (full) { return { full: full, first: full.filter(function (item) { return !used.has(item.id); }) }; });
@@ -338,7 +351,7 @@
     function levelBaseCycle(levelIndex, number) {
       return cachedCycle('level|' + levelIndex + '|base|' + number, function () {
         var pools = levelPools[levelIndex];
-        var items = shuffled(number === 0 ? pools.first : pools.full, CHARACTER_LEVELS_ID + '|' + CHARACTER_LEVEL_KEYS[levelIndex] + '|cycle|' + number);
+        var items = shuffled(number === 0 ? pools.first : pools.full, characterLevelsId + '|' + CHARACTER_LEVEL_KEYS[levelIndex] + '|cycle|' + number);
         return diverseOrder(items, levelCycleOffset(levelIndex, number));
       });
     }
@@ -349,14 +362,14 @@
       var actualNumber = pools.full.length < 12 ? 1 : number;
       return cachedCycle('level|' + levelIndex + '|cycle|' + actualNumber, function () {
         var previous = levelBaseCycle(levelIndex, actualNumber - 1);
-        if (!previous.length) previous = legacyTargets('characters', '2026-10-23').characters;
+        if (!previous.length) previous = edition ? edition.previousCharacters : legacyTargets('characters', '2026-10-23').characters;
         return arrangeBoundary('characters', levelBaseCycle(levelIndex, actualNumber), previous.slice(-4), levelCycleOffset(levelIndex, actualNumber), pools.full.length < 12 ? 0 : 4);
       });
     }
 
     function levelTargets(date) {
       prepareLevelPools();
-      var dayIndex = Math.floor((Date.parse(date + 'T00:00:00Z') - Date.parse(SCHEDULE_START + 'T00:00:00Z')) / 86400000);
+      var dayIndex = Math.floor((Date.parse(date + 'T00:00:00Z') - Date.parse(scheduleStart + 'T00:00:00Z')) / 86400000);
       var picked = [];
       levelPools.forEach(function (pools, levelIndex) {
         var position = dayIndex * 4;
@@ -377,7 +390,7 @@
     function targets(mode, date) {
       var key = mode + '|' + date;
       if (generationCache.has(key)) return generationCache.get(key);
-      var selected = hasLevels(mode, date) ? levelTargets(date) : date < SCHEDULE_START ? legacyTargets(mode, date) : scheduledTargets(mode, date);
+      var selected = hasLevels(mode, date) ? levelTargets(date) : date < scheduleStart ? legacyTargets(mode, date) : scheduledTargets(mode, date);
       generationCache.set(key, selected);
       if (generationCache.size > 128) generationCache.delete(generationCache.keys().next().value);
       return selected;
@@ -418,7 +431,7 @@
       } else if (mode === 'anidle' && action.kind === 'anime') {
         var id = mediaId(action.animeId, 'O palpite');
         if (!animeById.has(id)) fail('Escolha um anime disponível no catálogo.');
-        if (date >= SCHEDULE_START && !isSeries(animeById.get(id))) fail('Neste Anidle, escolha uma série de TV ou online; OVA, filmes e especiais não participam.');
+        if (date >= scheduleStart && !isSeries(animeById.get(id))) fail('Neste Anidle, escolha uma série de TV ou online; OVA, filmes e especiais não participam.');
         result = { kind: 'anime', animeId: id };
       } else fail('Essa jogada não pertence ao desafio selecionado.');
       if (hasLevels(mode, date) && result.kind !== 'giveup') {
@@ -652,14 +665,14 @@
         object(entry, 'Um dia do calendário');
         if (entry.mode && entry.mode !== day.mode) return;
         D.validateDate(entry.date);
-        if (entry.date < START_DATE || entry.date > today) return;
+        if (entry.date < calendarStartDate || entry.date > today) return;
         indexed.set(entry.date, { date: entry.date, completed: entry.completed === true, started: entry.started === true || (Array.isArray(entry.attempts) && entry.attempts.length > 0) || entry.completed === true });
       });
       indexed.set(day.date, { date: day.date, completed: day.completed, started: day.attempts.length > 0 });
       var dates = Array.from(indexed.values()).sort(function (a, b) { return a.date.localeCompare(b.date); });
       var state = { version: 1, days: {} };
       dates.forEach(function (entry) { state.days[entry.date] = { completed: entry.completed }; });
-      return { today: today, startDate: START_DATE, day: view(day), streak: D.streak(state, today), days: dates };
+      return { today: today, startDate: calendarStartDate, day: view(day), streak: D.streak(state, today), days: dates };
     }
 
     function searchAnime(query, limit, context) {
@@ -671,7 +684,7 @@
         object(context, 'O contexto da pesquisa');
         validMode(context.mode);
         D.validateDate(context.date);
-        if (context.mode === 'anidle' && context.date >= SCHEDULE_START) pool = anime.filter(isSeries);
+        if (context.mode === 'anidle' && context.date >= scheduleStart) pool = anime.filter(isSeries);
       }
       if (!term) return [];
       var compactTerm = term.replace(/ /g, '');
@@ -707,10 +720,58 @@
       });
     }
 
-    function datasetInfo() { return { version: 1, id: DATASET_ID, startDate: START_DATE, generatedAt: generatedAt, source: 'AniList', animeCount: anime.length, characterCount: characters.length }; }
+    function datasetInfo() { return { version: 1, id: baseDatasetId, startDate: startDate, generatedAt: generatedAt, source: 'AniList', animeCount: anime.length, characterCount: characters.length }; }
 
     return { read: read, apply: apply, view: view, response: response, searchAnime: searchAnime, searchCharacters: searchCharacters, compareAnime: compareAnime, summary: summary, datasetInfo: datasetInfo };
   }
 
-  return { START_DATE: START_DATE, DATASET_ID: DATASET_ID, SCHEDULE_START: SCHEDULE_START, SCHEDULE_ID: SCHEDULE_ID, CHARACTER_LEVELS_ID: CHARACTER_LEVELS_ID, createEngine: createEngine, normalizeText: normalized };
+  // Keep previous editions isolated: expanding a catalogue must not regenerate
+  // earlier challenges or change the validation of an existing saved record.
+  function createEngine(settings) {
+    var original = createBaseEngine(settings);
+    if (settings.expansion === undefined) return original;
+    var extension = object(settings.expansion, 'A ampliação dos desafios');
+    var expandedInput = object(extension.dataset, 'O catálogo ampliado dos desafios');
+    if (expandedInput.id !== EXPANSION_ID || expandedInput.startDate !== EXPANSION_START || expandedInput.source !== 'AniList' || extension.characterLevels === undefined) fail('A ampliação dos desafios é incompatível.');
+    var usedCharacters = new Set();
+    var usedAnime = new Set();
+    var previousCharacters;
+    var previousAnime;
+    ['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23', '2026-10-24'].forEach(function (date) {
+      previousCharacters = original.read(null, 'characters', date, EXPANSION_START).day.characters.map(function (card) { usedCharacters.add(card.target.id); return card.target; });
+      previousAnime = original.read(null, 'anidle', date, EXPANSION_START).day.targetAnime;
+      usedAnime.add(previousAnime.id);
+    });
+    var expanded = createBaseEngine({ dataset: expandedInput, characterLevels: extension.characterLevels, D: settings.D }, { usedCharacters: usedCharacters, usedAnime: usedAnime, previousCharacters: previousCharacters, previousAnime: previousAnime });
+    var expandedAnimeIds = new Set(expandedInput.anime.map(function (item) { return item.id; }));
+    var expandedCharacterIds = new Set(expandedInput.characters.map(function (item) { return item.id; }));
+    if (settings.dataset.anime.some(function (item) { return !expandedAnimeIds.has(item.id); }) || settings.dataset.characters.some(function (item) { return !expandedCharacterIds.has(item.id); })) fail('A ampliação precisa preservar todos os animes e personagens da edição anterior.');
+    function engineForDate(date) { return typeof date === 'string' && date >= EXPANSION_START ? expanded : original; }
+    return {
+      read: function (raw, mode, date, today) { return engineForDate(date).read(raw, mode, date, today); },
+      apply: function (raw, mode, date, action, today) { return engineForDate(date).apply(raw, mode, date, action, today); },
+      view: function (day) { return engineForDate(day && day.date).view(day); },
+      summary: function (day) { return engineForDate(day && day.date).summary(day); },
+      response: function (day, days, today) {
+        var result = engineForDate(day && day.date).response(day, days, today);
+        result.startDate = START_DATE;
+        return result;
+      },
+      searchAnime: function (query, limit, context) {
+        // Historical Anidle guesses must belong to that day's immutable edition.
+        // Character names and works may safely use the enlarged autocomplete.
+        return context && context.mode === 'anidle' && context.date < EXPANSION_START ? original.searchAnime(query, limit, context) : expanded.searchAnime(query, limit, context);
+      },
+      searchCharacters: expanded.searchCharacters,
+      compareAnime: expanded.compareAnime,
+      datasetInfo: function () {
+        var info = expanded.datasetInfo();
+        info.startDate = START_DATE;
+        info.expansionStartDate = EXPANSION_START;
+        return info;
+      }
+    };
+  }
+
+  return { START_DATE: START_DATE, DATASET_ID: DATASET_ID, SCHEDULE_START: SCHEDULE_START, SCHEDULE_ID: SCHEDULE_ID, CHARACTER_LEVELS_ID: CHARACTER_LEVELS_ID, EXPANSION_START: EXPANSION_START, EXPANSION_ID: EXPANSION_ID, EXPANDED_CHARACTER_LEVELS_ID: EXPANDED_CHARACTER_LEVELS_ID, createEngine: createEngine, normalizeText: normalized };
 });

@@ -47,16 +47,19 @@
   function loadEngine() {
     if (!engineTask) engineTask = (async () => {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 20000);
+      const timer = setTimeout(() => controller.abort(), 30000);
       try {
         const responses = await Promise.all([
           fetch('mini-data.json?v=mini-2026-10-20-v1', { signal: controller.signal }),
-          fetch('character-levels.json?v=characters-2026-10-24-v3', { signal: controller.signal })
+          fetch('character-levels.json?v=characters-2026-10-24-v3', { signal: controller.signal }),
+          fetch('mini-expanded.json?v=mini-2026-10-25-v4', { signal: controller.signal }),
+          fetch('character-levels-expanded.json?v=characters-2026-10-25-v4', { signal: controller.signal })
         ]);
         if (!responses[0].ok) throw Error('Não foi possível carregar o catálogo dos desafios.');
         if (!responses[1].ok) throw Error('Não foi possível carregar os níveis de personagens. Atualize a página e tente novamente.');
-        const [dataset, characterLevels] = await Promise.all(responses.map((response) => response.json()));
-        engine = window.SorteioMiniCore.createEngine({ dataset, D, characterLevels });
+        if (!responses[2].ok || !responses[3].ok) throw Error('Não foi possível carregar o catálogo ampliado. Atualize a página e tente novamente.');
+        const [dataset, characterLevels, expandedDataset, expandedLevels] = await Promise.all(responses.map((response) => response.json()));
+        engine = window.SorteioMiniCore.createEngine({ dataset, D, characterLevels, expansion: { dataset: expandedDataset, characterLevels: expandedLevels } });
         return engine;
       } finally { clearTimeout(timer); }
     })().catch((error) => { engineTask = null; throw error; });
